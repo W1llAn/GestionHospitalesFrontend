@@ -3,6 +3,7 @@ import { InputText } from "primereact/inputtext";
 import { FloatLabel } from "primereact/floatlabel";
 import { Password } from "primereact/password";
 import "../styles/Login.css";
+import Boton from "./Boton";
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -58,7 +59,9 @@ function Login() {
                 </FloatLabel>
               </div>
 
-              <div></div>
+              <div className="flex justify-center w-full">
+                <Boton text={"Iniciar Sesion"} className="w-2/3" />
+              </div>
             </form>
           </div>
         </div>
