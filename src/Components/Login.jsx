@@ -12,7 +12,13 @@ function Login() {
     <>
       <div className="flex h-screen">
         <div className="hidden lg:flex items-center justify-center flex-1 bg-bg-primary text-black">
-          <div className="w-full h-full relative"></div>
+          <div className="w-full h-full relative">
+            <img
+              className="object-cover h-full"
+              src="./Images/FondoLogin.png"
+              alt="Imagen principal de login"
+            />
+          </div>
         </div>
 
         <div className="w-full bg-gray-100 lg:w-1/2 flex items-center justify-center">
