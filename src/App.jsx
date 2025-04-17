@@ -1,9 +1,12 @@
 import PanelAdministracion from "./Components/PanelAdministracion";
 
+import { PrimeReactProvider } from "primereact/api";
 function App() {
   return (
     <>
-      <PanelAdministracion />
+      <PrimeReactProvider>
+        <PanelAdministracion />
+      </PrimeReactProvider>
     </>
   );
 }
