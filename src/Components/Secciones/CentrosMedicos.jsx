@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Boton from "../Boton";
 import {
   IconoCiudad,
@@ -14,6 +14,7 @@ import { TreeTable } from "primereact/treetable";
 import { Column } from "primereact/column";
 import accionesTemplate from "../AccionesTemplate";
 import ModalFormulario from "../ModalFormulario";
+import axios from "axios";
 import { Toast } from "primereact/toast";
 function CentrosMedicos() {
   const toast = useRef(null);
@@ -23,71 +24,52 @@ function CentrosMedicos() {
     nombre: "",
     ciudad: "",
     direccion: "",
-    cantidadEmpleados: "",
   });
-  const [data, setData] = useState([
-    {
-      key: "0",
-      data: {
-        nombre: "Centro Salud Norte",
-        ciudad: "Guayaquil",
-        direccion: "Av. Siempreviva 123",
-        cantidadEmpleados: 25,
-      },
-      children: [],
+  const [data, setData] = useState([]);
+
+  // Token de autenticación (reemplaza con el token real obtenido del backend)
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidW5pcXVlX25hbWUiOiJyb290IiwiVGlwb0VtcGxlYWRvIjoiQWRtaW5pc3RyYWRvciIsIkNlbnRyb01lZGljbyI6IkNlbnRyYWwiLCJhdWQiOiJ1c2VyIiwiaXNzIjoiTWljcm9zZXJ2aWNpby1BdXRlbnRpY2FjaW9uIiwiZXhwIjoxNzQ1MDIwNTQyLCJpYXQiOjE3NDUwMTg3NDIsIm5iZiI6MTc0NTAxODc0Mn0.PFQPp9XHhLiCAJOIWT7x9G1HZ0swI3d2mpe0okyaF_M";
+
+  // Configuración de axios con el token
+  const api = axios.create({
+    baseURL: "https://localhost:7256/api/Centro_Medico",
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
     },
-    {
-      key: "1",
-      data: {
-        nombre: "Hospital Central",
-        ciudad: "Cuenca",
-        direccion: "Calle Falsa 456",
-        cantidadEmpleados: 40,
-      },
-      children: [],
-    },
-    {
-      key: "2",
-      data: {
-        nombre: "Clínica del Sur",
-        ciudad: "Quito",
-        direccion: "Av. del Parque 789",
-        cantidadEmpleados: 30,
-      },
-      children: [],
-    },
-    {
-      key: "3",
-      data: {
-        nombre: "Centro Médico Andes",
-        ciudad: "Loja",
-        direccion: "Calle Larga 101",
-        cantidadEmpleados: 15,
-      },
-      children: [],
-    },
-    {
-      key: "4",
-      data: {
-        nombre: "Hospital del Valle",
-        ciudad: "Ambato",
-        direccion: "Av. de las Palmeras 55",
-        cantidadEmpleados: 20,
-      },
-      children: [],
-    },
-    {
-      key: "5",
-      data: {
-        nombre: "Centro Integral Salud",
-        ciudad: "Riobamba",
-        direccion: "Calle Saludable 222",
-        cantidadEmpleados: 10,
-      },
-      children: [],
-    },
-  ]);
-  const handleGuardarCentro = () => {
+  });
+
+  // Cargar centros médicos al montar el componente
+  useEffect(() => {
+    const fetchCentrosMedicos = async () => {
+      try {
+        const response = await api.get("");
+        // Transformar los datos de la API al formato esperado por TreeTable
+        const centros = response.data.map((centro, index) => ({
+          key: `${index}`,
+          data: {
+            id: centro.id,
+            nombre: centro.nombre,
+            ciudad: centro.ciudad,
+            direccion: centro.direccion,
+          },
+        }));
+        setData(centros);
+      } catch (error) {
+        console.log(error);
+
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "No se pudieron cargar los centros médicos.",
+          life: 3000,
+        });
+      }
+    };
+    fetchCentrosMedicos();
+  }, []);
+
+  const handleGuardarCentro = async () => {
     if (!nuevoCentro.nombre || !nuevoCentro.ciudad) {
       toast.current.show({
         severity: "warn",
@@ -97,28 +79,44 @@ function CentrosMedicos() {
       });
       return;
     }
+    try {
+      const response = await api.post("", {
+        nombre: nuevoCentro.nombre,
+        ciudad: nuevoCentro.ciudad,
+        direccion: nuevoCentro.direccion,
+      });
+      const nuevo = {
+        key: `${data.length}`,
+        data: {
+          id: response.data.id,
+          nombre: response.data.nombre,
+          ciudad: response.data.ciudad,
+          direccion: response.data.direccion,
+        },
+      };
+      setData([...data, nuevo]);
+      toast.current.show({
+        severity: "success",
+        summary: "Centro registrado",
+        detail: "El centro médico ha sido guardado exitosamente.",
+        life: 3000,
+      });
+      setNuevoCentro({
+        nombre: "",
+        ciudad: "",
+        direccion: "",
+      });
+      setModalVisible(false);
+    } catch (error) {
+      console.log(error);
 
-    const nuevo = {
-      key: `${data.length}`,
-      data: { ...nuevoCentro },
-      children: [],
-    };
-    setData([...data, nuevo]);
-
-    toast.current.show({
-      severity: "success",
-      summary: "Centro registrado",
-      detail: "El centro médico ha sido guardado exitosamente.",
-      life: 3000,
-    });
-
-    setNuevoCentro({
-      nombre: "",
-      ciudad: "",
-      direccion: "",
-      cantidadEmpleados: "",
-    });
-    setModalVisible(false);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "No se pudo registrar el centro médico.",
+        life: 3000,
+      });
+    }
   };
 
   return (
@@ -244,22 +242,6 @@ function CentrosMedicos() {
               }
             />
             <label htmlFor="direccion">Dirección</label>
-          </span>
-
-          {/*ESTE CAMPO SOLO ES PARA PRUEBAS */}
-          <span className="p-float-label">
-            <InputText
-              id="cantidadEmpleados"
-              keyfilter="int"
-              value={nuevoCentro.cantidadEmpleados}
-              onChange={(e) =>
-                setNuevoCentro({
-                  ...nuevoCentro,
-                  cantidadEmpleados: e.target.value,
-                })
-              }
-            />
-            <label htmlFor="cantidadEmpleados">Cantidad de Empleados</label>
           </span>
         </div>
       </ModalFormulario>
