@@ -7,6 +7,7 @@ import {
   IconoReportes,
   IconoUsuarios,
 } from "../assets/IconosComponentes";
+import CentrosMedicos from "./Secciones/CentrosMedicos";
 
 const navItems = [
   { key: "empleados", label: "Empleados", icon: <IconoEmpleados /> },
@@ -31,7 +32,7 @@ const PanelAdministracion = () => {
       case "empleados":
         return <h1>Componente Empleados</h1>;
       case "centroMedico":
-        return <h1>Componente centro médico</h1>;
+        return <CentrosMedicos />;
       case "reportes":
         return <h1>Componente Reportes</h1>;
       case "gestionUsuarios":
