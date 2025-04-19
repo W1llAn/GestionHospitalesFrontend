@@ -7,6 +7,7 @@ import {
   IconoReportes,
   IconoUsuarios,
 } from "../assets/IconosComponentes";
+import InterfazEmpleados from "./InterfazEmpleados";
 
 const navItems = [
   { key: "empleados", label: "Empleados", icon: <IconoEmpleados /> },
@@ -29,7 +30,7 @@ const PanelAdministracion = () => {
     //AQUI VA CADA UNO DE LOS COMPONENTES QUE SE VAN A RENDERIZAR EN CADA UNA DE LAS SECCIONES
     switch (activeSection) {
       case "empleados":
-        return <h1>Componente Empleados</h1>;
+        return <InterfazEmpleados />;
       case "centroMedico":
         return <h1>Componente centro médico</h1>;
       case "reportes":
@@ -56,8 +57,7 @@ const PanelAdministracion = () => {
             style={{
               backgroundImage:
                 "linear-gradient(to left, rgba(49, 69, 185, 0.60), #0067D2)",
-            }}
-          >
+            }}>
             Centro Hospitalario
           </span>
         </a>
@@ -70,8 +70,7 @@ const PanelAdministracion = () => {
                 onClick={() => setActiveSection(key)}
                 className={`${baseLinkClasses} ${
                   activeSection === key ? "bg-hover-gray text-gray-700" : ""
-                }`}
-              >
+                }`}>
                 <span className="mx-2">{icon}</span>
                 <span className="mx-4 font-semibold ">{label}</span>
               </div>
@@ -98,8 +97,7 @@ const PanelAdministracion = () => {
           </div>
           <div
             onClick={() => console.log("Cerrar sesión")}
-            className={`${baseLinkClasses}  items-center justify-center`}
-          >
+            className={`${baseLinkClasses}  items-center justify-center`}>
             <IconoCerrarSesion />
 
             <span className="mx-4 font-medium">Cerrar Sesión</span>
