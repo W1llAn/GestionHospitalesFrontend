@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Boton from "../Boton";
 import {
   IconoCiudad,
@@ -14,80 +14,82 @@ import { TreeTable } from "primereact/treetable";
 import { Column } from "primereact/column";
 import accionesTemplate from "../AccionesTemplate";
 import ModalFormulario from "../ModalFormulario";
+import axios from "axios";
 import { Toast } from "primereact/toast";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+import { Dropdown } from "primereact/dropdown";
 function CentrosMedicos() {
   const toast = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [centroSeleccionado, setCentroSeleccionado] = useState(null);
   const [nuevoCentro, setNuevoCentro] = useState({
     nombre: "",
     ciudad: "",
     direccion: "",
-    cantidadEmpleados: "",
   });
-  const [data, setData] = useState([
-    {
-      key: "0",
-      data: {
-        nombre: "Centro Salud Norte",
-        ciudad: "Guayaquil",
-        direccion: "Av. Siempreviva 123",
-        cantidadEmpleados: 25,
-      },
-      children: [],
+  const ciudadOptions = [
+    { label: "Cuenca", value: "Cuenca" },
+    { label: "Guayaquil", value: "Guayaquil" },
+  ];
+  const [data, setData] = useState([]);
+
+  // Token de autenticación (reemplaza con el token real obtenido del backend)
+  const TOKEN =
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidW5pcXVlX25hbWUiOiJyb290IiwiVGlwb0VtcGxlYWRvIjoiQWRtaW5pc3RyYWRvciIsIkNlbnRyb01lZGljbyI6IkNlbnRyYWwiLCJhdWQiOiJ1c2VyIiwiaXNzIjoiTWljcm9zZXJ2aWNpby1BdXRlbnRpY2FjaW9uIiwiZXhwIjoxNzQ1NjIwNzAyLCJpYXQiOjE3NDUwMjA3MDIsIm5iZiI6MTc0NTAyMDcwMn0.isGRJoTOEa7aR84HCz36t3DR4GCBSYZ17TIqzZrGLag";
+
+  // Configuración de axios con el token
+  const api = axios.create({
+    baseURL: "https://localhost:7256/api/Centro_Medico",
+    headers: {
+      Authorization: `Bearer ${TOKEN}`,
     },
-    {
-      key: "1",
-      data: {
-        nombre: "Hospital Central",
-        ciudad: "Cuenca",
-        direccion: "Calle Falsa 456",
-        cantidadEmpleados: 40,
-      },
-      children: [],
-    },
-    {
-      key: "2",
-      data: {
-        nombre: "Clínica del Sur",
-        ciudad: "Quito",
-        direccion: "Av. del Parque 789",
-        cantidadEmpleados: 30,
-      },
-      children: [],
-    },
-    {
-      key: "3",
-      data: {
-        nombre: "Centro Médico Andes",
-        ciudad: "Loja",
-        direccion: "Calle Larga 101",
-        cantidadEmpleados: 15,
-      },
-      children: [],
-    },
-    {
-      key: "4",
-      data: {
-        nombre: "Hospital del Valle",
-        ciudad: "Ambato",
-        direccion: "Av. de las Palmeras 55",
-        cantidadEmpleados: 20,
-      },
-      children: [],
-    },
-    {
-      key: "5",
-      data: {
-        nombre: "Centro Integral Salud",
-        ciudad: "Riobamba",
-        direccion: "Calle Saludable 222",
-        cantidadEmpleados: 10,
-      },
-      children: [],
-    },
-  ]);
-  const handleGuardarCentro = () => {
+  });
+
+  // Cargar centros médicos al montar el componente
+  useEffect(() => {
+    const fetchCentrosMedicos = async () => {
+      try {
+        const response = await api.get("");
+        const centros = response.data
+          .sort((a, b) => b.id - a.id) // Ordenar por id descendente
+          .map((centro, index) => ({
+            key: `${index}`,
+            data: {
+              id: centro.id,
+              nombre: centro.nombre,
+              ciudad: centro.ciudad,
+              direccion: centro.direccion,
+            },
+            children: [],
+          }));
+        setData(centros);
+      } catch (error) {
+        console.error("Error al cargar centros médicos", error);
+
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "No se pudieron cargar los centros médicos.",
+          life: 3000,
+        });
+      }
+    };
+    fetchCentrosMedicos();
+  }, []);
+  // Manejar la apertura del modal para edición
+  const handleEdit = (rowData) => {
+    setIsEditing(true);
+    setCentroSeleccionado(rowData);
+    setNuevoCentro({
+      nombre: rowData.data.nombre,
+      ciudad: rowData.data.ciudad,
+      direccion: rowData.data.direccion,
+    });
+    setModalVisible(true);
+  };
+  const handleGuardarCentro = async () => {
     if (!nuevoCentro.nombre || !nuevoCentro.ciudad) {
       toast.current.show({
         severity: "warn",
@@ -97,33 +99,134 @@ function CentrosMedicos() {
       });
       return;
     }
+    try {
+      if (isEditing) {
+        // Editar centro médico
+        const response = await api.put(`/${centroSeleccionado.data.id}`, {
+          id: centroSeleccionado.data.id,
+          nombre: nuevoCentro.nombre,
+          ciudad: nuevoCentro.ciudad,
+          direccion: nuevoCentro.direccion,
+        });
 
-    const nuevo = {
-      key: `${data.length}`,
-      data: { ...nuevoCentro },
-      children: [],
-    };
-    setData([...data, nuevo]);
+        // Actualizar la lista de centros
+        const updatedData = data.map((item) =>
+          item.data.id === centroSeleccionado.data.id
+            ? {
+                ...item,
+                data: {
+                  id: centroSeleccionado.data.id,
+                  nombre: nuevoCentro.nombre,
+                  ciudad: nuevoCentro.ciudad,
+                  direccion: nuevoCentro.direccion,
+                },
+              }
+            : item
+        );
+        setData(updatedData);
 
-    toast.current.show({
-      severity: "success",
-      summary: "Centro registrado",
-      detail: "El centro médico ha sido guardado exitosamente.",
-      life: 3000,
+        toast.current.show({
+          severity: "success",
+          summary: "Centro actualizado",
+          detail: "El centro médico ha sido actualizado exitosamente.",
+          life: 3000,
+        });
+      } else {
+        const response = await api.post("", {
+          nombre: nuevoCentro.nombre,
+          ciudad: nuevoCentro.ciudad,
+          direccion: nuevoCentro.direccion,
+        });
+        const nuevo = {
+          key: `${data.length}`,
+          data: {
+            id: response.data.id,
+            nombre: response.data.nombre,
+            ciudad: response.data.ciudad,
+            direccion: response.data.direccion,
+          },
+        };
+        setData([nuevo, ...data]);
+
+        toast.current.show({
+          severity: "success",
+          summary: "Centro registrado",
+          detail: "El centro médico ha sido guardado exitosamente.",
+          life: 3000,
+        });
+      }
+      setNuevoCentro({
+        nombre: "",
+        ciudad: "",
+        direccion: "",
+      });
+      setIsEditing(false);
+      setCentroSeleccionado(null);
+      setModalVisible(false);
+    } catch (error) {
+      console.log(error);
+
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: isEditing
+          ? "No se pudo actualizar el centro médico."
+          : "No se pudo registrar el centro médico.",
+        life: 3000,
+      });
+    }
+  };
+
+  const handleDelete = (rowData) => {
+    console.log("Eliminar", rowData);
+
+    confirmDialog({
+      message: `¿Estás seguro de que deseas eliminar el centro médico "${rowData.data.nombre}"?`,
+      header: "Confirmar Eliminación",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "Sí, eliminar",
+      rejectLabel: "Cancelar",
+      accept: async () => {
+        try {
+          await api.delete(`/${rowData.data.id}`);
+          const updateData = data.filter(
+            (item) => item.data.id !== rowData.data.id
+          );
+          setData(updateData);
+          toast.current.show({
+            severity: "success",
+            summary: "Centro eliminado",
+            detail: "El centro médico ha sido eliminado exitosamente.",
+            life: 3000,
+          });
+        } catch (error) {
+          console.error("Error al eliminar", error);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "No se pudo eliminar el centro médico.",
+            life: 3000,
+          });
+        }
+      },
     });
+  };
 
+  const handleCancel = () => {
     setNuevoCentro({
       nombre: "",
       ciudad: "",
       direccion: "",
-      cantidadEmpleados: "",
     });
+    setIsEditing(false);
+    setCentroSeleccionado(null);
     setModalVisible(false);
   };
 
   return (
     <section className="py-14 px-8">
       <Toast ref={toast} />
+      <ConfirmDialog />
       <div className="flex flex-row justify-between">
         <h1 className="text-3xl font-bold">Centros Médicos</h1>
         <Boton
@@ -182,35 +285,35 @@ function CentrosMedicos() {
             }
           ></Column>
           <Column
-            field="cantidadEmpleados"
-            header={
-              <span className="flex items-center gap-2">
-                <IconoEmpleadosTabla className="text-lg" />
-                Cantidad Empleados
-              </span>
+            body={(rowData) =>
+              accionesTemplate({
+                rowData,
+                onEdit: handleEdit,
+                onDelete: handleDelete,
+              })
             }
-          ></Column>
-          <Column
-            body={accionesTemplate}
             header=""
             style={{ width: "10rem" }}
           />
         </TreeTable>
       </div>
 
-      {/* Modal Reutilizable */}
+      {/* Modal  */}
       <ModalFormulario
         visible={modalVisible}
-        onHide={() => setModalVisible(false)}
-        titulo="Registrar Centro Médico"
+        onHide={handleCancel}
+        titulo={isEditing ? "Editar Centro Médico" : "Registrar Centro Médico"}
         footer={
           <div className="flex justify-end gap-2">
             <Boton
               text="Cancelar"
-              onClick={() => setModalVisible(false)}
+              onClick={handleCancel}
               className="bg-red-600 hover:bg-red-700"
             />
-            <Boton text="Guardar" onClick={handleGuardarCentro} />
+            <Boton
+              text={isEditing ? "Actualizar" : "Guardar"}
+              onClick={handleGuardarCentro}
+            />
           </div>
         }
       >
@@ -226,12 +329,14 @@ function CentrosMedicos() {
             <label htmlFor="nombre">Nombre</label>
           </span>
           <span className="p-float-label">
-            <InputText
+            <Dropdown
               id="ciudad"
               value={nuevoCentro.ciudad}
+              options={ciudadOptions}
               onChange={(e) =>
-                setNuevoCentro({ ...nuevoCentro, ciudad: e.target.value })
+                setNuevoCentro({ ...nuevoCentro, ciudad: e.value })
               }
+              placeholder="Selecciona una ciudad"
             />
             <label htmlFor="ciudad">Ciudad</label>
           </span>
@@ -244,22 +349,6 @@ function CentrosMedicos() {
               }
             />
             <label htmlFor="direccion">Dirección</label>
-          </span>
-
-          {/*ESTE CAMPO SOLO ES PARA PRUEBAS */}
-          <span className="p-float-label">
-            <InputText
-              id="cantidadEmpleados"
-              keyfilter="int"
-              value={nuevoCentro.cantidadEmpleados}
-              onChange={(e) =>
-                setNuevoCentro({
-                  ...nuevoCentro,
-                  cantidadEmpleados: e.target.value,
-                })
-              }
-            />
-            <label htmlFor="cantidadEmpleados">Cantidad de Empleados</label>
           </span>
         </div>
       </ModalFormulario>
