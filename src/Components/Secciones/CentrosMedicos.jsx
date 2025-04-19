@@ -20,6 +20,8 @@ function CentrosMedicos() {
   const toast = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [centroSeleccionado, setCentroSeleccionado] = useState(null);
   const [nuevoCentro, setNuevoCentro] = useState({
     nombre: "",
     ciudad: "",
@@ -29,7 +31,7 @@ function CentrosMedicos() {
 
   // Token de autenticación (reemplaza con el token real obtenido del backend)
   const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidW5pcXVlX25hbWUiOiJyb290IiwiVGlwb0VtcGxlYWRvIjoiQWRtaW5pc3RyYWRvciIsIkNlbnRyb01lZGljbyI6IkNlbnRyYWwiLCJhdWQiOiJ1c2VyIiwiaXNzIjoiTWljcm9zZXJ2aWNpby1BdXRlbnRpY2FjaW9uIiwiZXhwIjoxNzQ1MDIwNTQyLCJpYXQiOjE3NDUwMTg3NDIsIm5iZiI6MTc0NTAxODc0Mn0.PFQPp9XHhLiCAJOIWT7x9G1HZ0swI3d2mpe0okyaF_M";
+    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidW5pcXVlX25hbWUiOiJyb290IiwiVGlwb0VtcGxlYWRvIjoiQWRtaW5pc3RyYWRvciIsIkNlbnRyb01lZGljbyI6IkNlbnRyYWwiLCJhdWQiOiJ1c2VyIiwiaXNzIjoiTWljcm9zZXJ2aWNpby1BdXRlbnRpY2FjaW9uIiwiZXhwIjoxNzQ1NjIwNzAyLCJpYXQiOjE3NDUwMjA3MDIsIm5iZiI6MTc0NTAyMDcwMn0.isGRJoTOEa7aR84HCz36t3DR4GCBSYZ17TIqzZrGLag";
 
   // Configuración de axios con el token
   const api = axios.create({
@@ -68,7 +70,17 @@ function CentrosMedicos() {
     };
     fetchCentrosMedicos();
   }, []);
-
+  // Manejar la apertura del modal para edición
+  const handleEdit = (rowData) => {
+    setIsEditing(true);
+    setCentroSeleccionado(rowData);
+    setNuevoCentro({
+      nombre: rowData.data.nombre,
+      ciudad: rowData.data.ciudad,
+      direccion: rowData.data.direccion,
+    });
+    setModalVisible(true);
+  };
   const handleGuardarCentro = async () => {
     if (!nuevoCentro.nombre || !nuevoCentro.ciudad) {
       toast.current.show({
@@ -80,32 +92,68 @@ function CentrosMedicos() {
       return;
     }
     try {
-      const response = await api.post("", {
-        nombre: nuevoCentro.nombre,
-        ciudad: nuevoCentro.ciudad,
-        direccion: nuevoCentro.direccion,
-      });
-      const nuevo = {
-        key: `${data.length}`,
-        data: {
-          id: response.data.id,
-          nombre: response.data.nombre,
-          ciudad: response.data.ciudad,
-          direccion: response.data.direccion,
-        },
-      };
-      setData([...data, nuevo]);
-      toast.current.show({
-        severity: "success",
-        summary: "Centro registrado",
-        detail: "El centro médico ha sido guardado exitosamente.",
-        life: 3000,
-      });
+      if (isEditing) {
+        // Editar centro médico
+        const response = await api.put(`/${centroSeleccionado.data.id}`, {
+          id: centroSeleccionado.data.id,
+          nombre: nuevoCentro.nombre,
+          ciudad: nuevoCentro.ciudad,
+          direccion: nuevoCentro.direccion,
+        });
+
+        // Actualizar la lista de centros
+        const updatedData = data.map((item) =>
+          item.data.id === centroSeleccionado.data.id
+            ? {
+                ...item,
+                data: {
+                  id: centroSeleccionado.data.id,
+                  nombre: nuevoCentro.nombre,
+                  ciudad: nuevoCentro.ciudad,
+                  direccion: nuevoCentro.direccion,
+                },
+              }
+            : item
+        );
+        setData(updatedData);
+
+        toast.current.show({
+          severity: "success",
+          summary: "Centro actualizado",
+          detail: "El centro médico ha sido actualizado exitosamente.",
+          life: 3000,
+        });
+      } else {
+        const response = await api.post("", {
+          nombre: nuevoCentro.nombre,
+          ciudad: nuevoCentro.ciudad,
+          direccion: nuevoCentro.direccion,
+        });
+        const nuevo = {
+          key: `${data.length}`,
+          data: {
+            id: response.data.id,
+            nombre: response.data.nombre,
+            ciudad: response.data.ciudad,
+            direccion: response.data.direccion,
+          },
+        };
+        setData([...data, nuevo]);
+
+        toast.current.show({
+          severity: "success",
+          summary: "Centro registrado",
+          detail: "El centro médico ha sido guardado exitosamente.",
+          life: 3000,
+        });
+      }
       setNuevoCentro({
         nombre: "",
         ciudad: "",
         direccion: "",
       });
+      setIsEditing(false);
+      setCentroSeleccionado(null);
       setModalVisible(false);
     } catch (error) {
       console.log(error);
@@ -113,12 +161,23 @@ function CentrosMedicos() {
       toast.current.show({
         severity: "error",
         summary: "Error",
-        detail: "No se pudo registrar el centro médico.",
+        detail: isEditing
+          ? "No se pudo actualizar el centro médico."
+          : "No se pudo registrar el centro médico.",
         life: 3000,
       });
     }
   };
-
+  const handleCancel = () => {
+    setNuevoCentro({
+      nombre: "",
+      ciudad: "",
+      direccion: "",
+    });
+    setIsEditing(false);
+    setCentroSeleccionado(null);
+    setModalVisible(false);
+  };
   return (
     <section className="py-14 px-8">
       <Toast ref={toast} />
@@ -189,26 +248,31 @@ function CentrosMedicos() {
             }
           ></Column>
           <Column
-            body={accionesTemplate}
+            body={(rowData) =>
+              accionesTemplate({ rowData, onClick: handleEdit })
+            }
             header=""
             style={{ width: "10rem" }}
           />
         </TreeTable>
       </div>
 
-      {/* Modal Reutilizable */}
+      {/* Modal  */}
       <ModalFormulario
         visible={modalVisible}
-        onHide={() => setModalVisible(false)}
-        titulo="Registrar Centro Médico"
+        onHide={handleCancel}
+        titulo={isEditing ? "Editar Centro Médico" : "Registrar Centro Médico"}
         footer={
           <div className="flex justify-end gap-2">
             <Boton
               text="Cancelar"
-              onClick={() => setModalVisible(false)}
+              onClick={handleCancel}
               className="bg-red-600 hover:bg-red-700"
             />
-            <Boton text="Guardar" onClick={handleGuardarCentro} />
+            <Boton
+              text={isEditing ? "Actualizar" : "Guardar"}
+              onClick={handleGuardarCentro}
+            />
           </div>
         }
       >
