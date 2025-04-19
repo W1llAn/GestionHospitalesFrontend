@@ -16,6 +16,7 @@ import accionesTemplate from "../AccionesTemplate";
 import ModalFormulario from "../ModalFormulario";
 import axios from "axios";
 import { Toast } from "primereact/toast";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 function CentrosMedicos() {
   const toast = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -46,19 +47,21 @@ function CentrosMedicos() {
     const fetchCentrosMedicos = async () => {
       try {
         const response = await api.get("");
-        // Transformar los datos de la API al formato esperado por TreeTable
-        const centros = response.data.map((centro, index) => ({
-          key: `${index}`,
-          data: {
-            id: centro.id,
-            nombre: centro.nombre,
-            ciudad: centro.ciudad,
-            direccion: centro.direccion,
-          },
-        }));
+        const centros = response.data
+          .sort((a, b) => b.id - a.id) // Ordenar por id descendente
+          .map((centro, index) => ({
+            key: `${index}`,
+            data: {
+              id: centro.id,
+              nombre: centro.nombre,
+              ciudad: centro.ciudad,
+              direccion: centro.direccion,
+            },
+            children: [],
+          }));
         setData(centros);
       } catch (error) {
-        console.log(error);
+        console.error("Error al cargar centros médicos", error);
 
         toast.current.show({
           severity: "error",
@@ -138,7 +141,7 @@ function CentrosMedicos() {
             direccion: response.data.direccion,
           },
         };
-        setData([...data, nuevo]);
+        setData([nuevo, ...data]);
 
         toast.current.show({
           severity: "success",
@@ -168,6 +171,42 @@ function CentrosMedicos() {
       });
     }
   };
+
+  const handleDelete = (rowData) => {
+    console.log("Eliminar", rowData);
+
+    confirmDialog({
+      message: `¿Estás seguro de que deseas eliminar el centro médico "${rowData.data.nombre}"?`,
+      header: "Confirmar Eliminación",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "Sí, eliminar",
+      rejectLabel: "Cancelar",
+      accept: async () => {
+        try {
+          await api.delete(`/${rowData.data.id}`);
+          const updateData = data.filter(
+            (item) => item.data.id !== rowData.data.id
+          );
+          setData(updateData);
+          toast.current.show({
+            severity: "success",
+            summary: "Centro eliminado",
+            detail: "El centro médico ha sido eliminado exitosamente.",
+            life: 3000,
+          });
+        } catch (error) {
+          console.error("Error al eliminar", error);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "No se pudo eliminar el centro médico.",
+            life: 3000,
+          });
+        }
+      },
+    });
+  };
+
   const handleCancel = () => {
     setNuevoCentro({
       nombre: "",
@@ -178,9 +217,11 @@ function CentrosMedicos() {
     setCentroSeleccionado(null);
     setModalVisible(false);
   };
+
   return (
     <section className="py-14 px-8">
       <Toast ref={toast} />
+      <ConfirmDialog />
       <div className="flex flex-row justify-between">
         <h1 className="text-3xl font-bold">Centros Médicos</h1>
         <Boton
@@ -239,17 +280,12 @@ function CentrosMedicos() {
             }
           ></Column>
           <Column
-            field="cantidadEmpleados"
-            header={
-              <span className="flex items-center gap-2">
-                <IconoEmpleadosTabla className="text-lg" />
-                Cantidad Empleados
-              </span>
-            }
-          ></Column>
-          <Column
             body={(rowData) =>
-              accionesTemplate({ rowData, onClick: handleEdit })
+              accionesTemplate({
+                rowData,
+                onEdit: handleEdit,
+                onDelete: handleDelete,
+              })
             }
             header=""
             style={{ width: "10rem" }}

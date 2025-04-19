@@ -1,19 +1,19 @@
 import PropTypes from "prop-types";
 import { Button } from "primereact/button"; // Usamos íconos con p-button
 
-const accionesTemplate = ({ rowData, onClick }) => {
+const accionesTemplate = ({ rowData, onEdit, onDelete }) => {
   return (
     <div className="flex gap-2">
       <Button
         icon="pi pi-pencil"
         className="p-button-rounded p-button-text p-button-sm"
-        onClick={() => onClick(rowData)}
+        onClick={() => onEdit(rowData)}
         tooltip="Editar"
       />
       <Button
         icon="pi pi-trash"
         className="p-button-rounded p-button-danger p-button-text p-button-sm"
-        onClick={() => console.log("Eliminar")}
+        onClick={() => onDelete(rowData)}
         tooltip="Eliminar"
       />
     </div>
@@ -21,6 +21,7 @@ const accionesTemplate = ({ rowData, onClick }) => {
 };
 accionesTemplate.propTypes = {
   rowData: PropTypes.object.isRequired,
-  onClick: PropTypes.func,
+  onEdit: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
 };
 export default accionesTemplate;
