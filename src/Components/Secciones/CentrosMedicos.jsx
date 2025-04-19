@@ -17,6 +17,7 @@ import ModalFormulario from "../ModalFormulario";
 import axios from "axios";
 import { Toast } from "primereact/toast";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+import { Dropdown } from "primereact/dropdown";
 function CentrosMedicos() {
   const toast = useRef(null);
   const [globalFilter, setGlobalFilter] = useState("");
@@ -28,6 +29,10 @@ function CentrosMedicos() {
     ciudad: "",
     direccion: "",
   });
+  const ciudadOptions = [
+    { label: "Cuenca", value: "Cuenca" },
+    { label: "Guayaquil", value: "Guayaquil" },
+  ];
   const [data, setData] = useState([]);
 
   // Token de autenticación (reemplaza con el token real obtenido del backend)
@@ -324,12 +329,14 @@ function CentrosMedicos() {
             <label htmlFor="nombre">Nombre</label>
           </span>
           <span className="p-float-label">
-            <InputText
+            <Dropdown
               id="ciudad"
               value={nuevoCentro.ciudad}
+              options={ciudadOptions}
               onChange={(e) =>
-                setNuevoCentro({ ...nuevoCentro, ciudad: e.target.value })
+                setNuevoCentro({ ...nuevoCentro, ciudad: e.value })
               }
+              placeholder="Selecciona una ciudad"
             />
             <label htmlFor="ciudad">Ciudad</label>
           </span>
