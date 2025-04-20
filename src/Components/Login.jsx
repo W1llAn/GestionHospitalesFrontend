@@ -31,7 +31,6 @@ function Login() {
         contrasenia: password,
       });
       const token = response.data.token_;
-      console.log("Token recibido:", token);
 
       localStorage.setItem("jwtToken", token); // Guardar el token en sessionStorage
 

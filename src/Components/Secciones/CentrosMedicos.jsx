@@ -170,8 +170,6 @@ function CentrosMedicos() {
   };
 
   const handleDelete = (rowData) => {
-    console.log("Eliminar", rowData);
-
     confirmDialog({
       message: `¿Estás seguro de que deseas eliminar el centro médico "${rowData.data.nombre}"?`,
       header: "Confirmar Eliminación",
