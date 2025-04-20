@@ -60,9 +60,7 @@ const TablaDatos = ({ columnas, datos, opciones = {} }) => {
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-200">
-          {/* DataTable will populate the tbody */}
-        </tbody>
+        <tbody className="divide-y divide-gray-200"></tbody>
       </table>
     </div>
   );
