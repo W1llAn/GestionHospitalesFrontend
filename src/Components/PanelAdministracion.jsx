@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   IconoCerrarSesion,
   IconoEmpleados,
@@ -11,7 +11,8 @@ import {
 import InterfazEmpleados from "./InterfazEmpleados";
 
 import CentrosMedicos from "./Secciones/CentrosMedicos";
-
+import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 const navItems = [
   { key: "empleados", label: "Empleados", icon: <IconoEmpleados /> },
@@ -25,7 +26,30 @@ const navItems = [
 ];
 
 const PanelAdministracion = () => {
-  const [activeSection, setActiveSection] = useState("principal");
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState("empleados");
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("jwtToken");
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        console.log("Decoded JWT:", decoded);
+
+        setUserData({
+          username: decoded.unique_name || "Usuario desconocido",
+          email: decoded.email || "Sin email registrado",
+        });
+      } catch (error) {
+        console.error("Error decod Debe ser: codificando el token:", error);
+        localStorage.removeItem("jwtToken");
+        navigate("/login");
+      }
+    } else {
+      navigate("/login");
+    }
+  }, [navigate]);
 
   const baseLinkClasses =
     "flex items-center px-6 py-3 mb-4 text-text-primary transition-colors duration-300 transform rounded-md cursor-pointer hover:bg-hover-gray";
@@ -61,7 +85,8 @@ const PanelAdministracion = () => {
             style={{
               backgroundImage:
                 "linear-gradient(to left, rgba(49, 69, 185, 0.60), #0067D2)",
-            }}>
+            }}
+          >
             Centro Hospitalario
           </span>
         </a>
@@ -74,7 +99,8 @@ const PanelAdministracion = () => {
                 onClick={() => setActiveSection(key)}
                 className={`${baseLinkClasses} ${
                   activeSection === key ? "bg-hover-gray text-gray-700" : ""
-                }`}>
+                }`}
+              >
                 <span className="mx-2">{icon}</span>
                 <span className="mx-4 font-semibold ">{label}</span>
               </div>
@@ -91,17 +117,21 @@ const PanelAdministracion = () => {
               <IconoPerfil />
               <div>
                 <p className="text-text-primary font-semibold text-sm">
-                  Nombre usuario
+                  {userData ? userData.username : ""}
                 </p>
                 <span className="text-text-secondary font-light text-sm">
-                  example@gmail.com
+                  {userData ? userData.email : ""}
                 </span>
               </div>
             </div>
           </div>
           <div
-            onClick={() => console.log("Cerrar sesión")}
-            className={`${baseLinkClasses}  items-center justify-center`}>
+            onClick={() => {
+              localStorage.removeItem("jwtToken");
+              navigate("/login");
+            }}
+            className={`${baseLinkClasses}  items-center justify-center`}
+          >
             <IconoCerrarSesion />
 
             <span className="mx-4 font-medium">Cerrar Sesión</span>
