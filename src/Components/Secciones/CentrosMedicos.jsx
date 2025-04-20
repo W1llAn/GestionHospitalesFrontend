@@ -91,12 +91,15 @@ function CentrosMedicos() {
     try {
       if (isEditing) {
         // Editar centro médico
-        const response = await api.put(`/${centroSeleccionado.data.id}`, {
-          id: centroSeleccionado.data.id,
-          nombre: nuevoCentro.nombre,
-          ciudad: nuevoCentro.ciudad,
-          direccion: nuevoCentro.direccion,
-        });
+        const response = await api.put(
+          `/Administracion/CentrosMedicos/${centroSeleccionado.data.id}`,
+          {
+            id: centroSeleccionado.data.id,
+            nombre: nuevoCentro.nombre,
+            ciudad: nuevoCentro.ciudad,
+            direccion: nuevoCentro.direccion,
+          }
+        );
 
         // Actualizar la lista de centros
         const updatedData = data.map((item) =>
@@ -121,7 +124,7 @@ function CentrosMedicos() {
           life: 3000,
         });
       } else {
-        const response = await api.post("", {
+        const response = await api.post("/Administracion/CentrosMedicos", {
           nombre: nuevoCentro.nombre,
           ciudad: nuevoCentro.ciudad,
           direccion: nuevoCentro.direccion,
@@ -177,7 +180,7 @@ function CentrosMedicos() {
       rejectLabel: "Cancelar",
       accept: async () => {
         try {
-          await api.delete(`/${rowData.data.id}`);
+          await api.delete(`/Administracion/CentrosMedicos/${rowData.data.id}`);
           const updateData = data.filter(
             (item) => item.data.id !== rowData.data.id
           );
