@@ -14,7 +14,7 @@ import { TreeTable } from "primereact/treetable";
 import { Column } from "primereact/column";
 import accionesTemplate from "../AccionesTemplate";
 import ModalFormulario from "../ModalFormulario";
-import axios from "axios";
+import api from "../../api/config";
 import { Toast } from "primereact/toast";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Dropdown } from "primereact/dropdown";
@@ -35,24 +35,13 @@ function CentrosMedicos() {
   ];
   const [data, setData] = useState([]);
 
-  // Token de autenticación (reemplaza con el token real obtenido del backend)
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidW5pcXVlX25hbWUiOiJyb290IiwiVGlwb0VtcGxlYWRvIjoiQWRtaW5pc3RyYWRvciIsIkNlbnRyb01lZGljbyI6IkNlbnRyYWwiLCJhdWQiOiJ1c2VyIiwiaXNzIjoiTWljcm9zZXJ2aWNpby1BdXRlbnRpY2FjaW9uIiwiZXhwIjoxNzQ1NjIwNzAyLCJpYXQiOjE3NDUwMjA3MDIsIm5iZiI6MTc0NTAyMDcwMn0.isGRJoTOEa7aR84HCz36t3DR4GCBSYZ17TIqzZrGLag";
-
-  // Configuración de axios con el token
-  const api = axios.create({
-    baseURL: "https://localhost:7256/api/Centro_Medico",
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-    },
-  });
-
   // Cargar centros médicos al montar el componente
   useEffect(() => {
     const fetchCentrosMedicos = async () => {
       try {
-        const response = await api.get("");
-        const centros = response.data
+        const response = await api.get("/Administracion/CentrosMedicos");
+
+        const centros = response.data.centros
           .sort((a, b) => b.id - a.id) // Ordenar por id descendente
           .map((centro, index) => ({
             key: `${index}`,
