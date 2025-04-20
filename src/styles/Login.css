@@ -1,0 +1,21 @@
+/* Asegura que el contenedor principal del Password ocupe todo el ancho */
+.p-password {
+  width: 100% !important;
+}
+
+/* Asegura que el input interno ocupe todo el ancho */
+.p-password input {
+  width: 100% !important;
+}
+
+/* Asegura que el contenedor del ícono ocupe todo el ancho y mantenga el layout */
+.p-icon-field {
+  width: 100% !important;
+  display: flex !important;
+  align-items: center;
+}
+
+/* Asegura que el FloatLabel no restrinja el ancho */
+.p-float-label {
+  width: 100% !important;
+}
