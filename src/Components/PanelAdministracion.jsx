@@ -9,11 +9,11 @@ import {
 } from "../assets/IconosComponentes";
 
 import InterfazEmpleados from "./Secciones/InterfazEmpleados";
+import InterfazReportes from "./Secciones/InterfazReportes";
 
 import CentrosMedicos from "./Secciones/CentrosMedicos";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-
 
 const navItems = [
   { key: "empleados", label: "Empleados", icon: <IconoEmpleados /> },
@@ -63,7 +63,7 @@ const PanelAdministracion = () => {
       case "centroMedico":
         return <CentrosMedicos />;
       case "reportes":
-        return <h1>Componente Reportes</h1>;
+        return <InterfazReportes />;
       case "gestionUsuarios":
         return <h1>Gestión de Usuarios</h1>;
       default:
@@ -74,7 +74,7 @@ const PanelAdministracion = () => {
   return (
     <div className="flex">
       {/* Sidebar */}
-      <aside className="flex flex-col w-80 h-screen px-4 py-8 overflow-y-auto bg-bg-primary shadow-lg">
+      <aside className="flex flex-col w-70 h-screen px-4 py-8 overflow-y-auto bg-bg-primary shadow-lg">
         <a href="#" className="flex items-center">
           <img
             className="w-auto h-6 sm:h-7"
@@ -86,8 +86,7 @@ const PanelAdministracion = () => {
             style={{
               backgroundImage:
                 "linear-gradient(to left, rgba(49, 69, 185, 0.60), #0067D2)",
-            }}
-          >
+            }}>
             Centro Hospitalario
           </span>
         </a>
@@ -100,8 +99,7 @@ const PanelAdministracion = () => {
                 onClick={() => setActiveSection(key)}
                 className={`${baseLinkClasses} ${
                   activeSection === key ? "bg-hover-gray text-gray-700" : ""
-                }`}
-              >
+                }`}>
                 <span className="mx-2">{icon}</span>
                 <span className="mx-4 font-semibold ">{label}</span>
               </div>
@@ -131,8 +129,7 @@ const PanelAdministracion = () => {
               localStorage.removeItem("jwtToken");
               navigate("/login");
             }}
-            className={`${baseLinkClasses}  items-center justify-center`}
-          >
+            className={`${baseLinkClasses}  items-center justify-center`}>
             <IconoCerrarSesion />
 
             <span className="mx-4 font-medium">Cerrar Sesión</span>

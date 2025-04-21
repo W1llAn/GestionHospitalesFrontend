@@ -5,6 +5,8 @@ import InterfazEspecialidades from "./InterfazEspecialidades";
 import FormularioEmpleado from "../FormularioEmpleado";
 import { Toast } from "primereact/toast";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+import Boton from "../Boton";
+import { IconoCrear } from "../../assets/IconosComponentes";
 
 const InterfazEmpleados = () => {
   const toast = useRef();
@@ -13,76 +15,43 @@ const InterfazEmpleados = () => {
   const [modalEmpleado, setModalEmpleado] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Estado para disparar useEffect
 
-  //METODO PARA HACER LOGIN SOLO PRUEBAS
-  const login = async (nombreUsuario, contrasenia) => {
-    try {
-      // Hacer la solicitud POST a la API
-      const response = await fetch("https://localhost:7148/api/Usuarios", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nombreUsuario: nombreUsuario,
-          contrasenia: contrasenia,
-        }),
-      });
-
-      // Verificar si la respuesta es exitosa
-      if (!response.ok) {
-        throw new Error("Error en el login: " + response.statusText);
-      }
-
-      // Obtener el token como texto (en lugar de JSON)
-      const token = await response.text();
-
-      // Guardar el token en sessionStorage
-      sessionStorage.setItem("jwtToken", token);
-
-      return token;
-    } catch (error) {
-      console.error("Error durante el login:", error.message);
-      throw error;
-    }
-  };
-
   // SE DEFINEN LAS COLUMNAS QUE VA A USAR EL COMPONENTE
   const columnas = [
     {
-      title: "Cédula",
+      title: `Cédula`,
       data: "cedula",
       className: "font-medium text-gray-900",
     },
     {
-      title: "Nombre",
+      title: `Nombre`,
       data: "nombre",
       className: "text-gray-600",
     },
     {
-      title: "Email",
+      title: `Email`,
       data: "email",
-      className: "text-blue-600 hover:underline",
+      className: "text-blue-800 hover:underline",
     },
     {
       title: "Centro Médico",
       //CON LA FUNCION ROW SE ACCEDE A LOS DENTRO DE LOS OBJETOS JSON
-      data: (row) => row.centro_Medico.nombre,
+      data: (row) => row.centroMedico.nombre,
       className: "text-gray-600",
     },
     {
       title: "Cargo",
-      data: (row) => row.tipo_Empleado.tipo,
+      data: (row) => row.tipoEmpleado.tipo,
       className: "text-gray-600",
     },
 
     {
-      title: "Teléfono",
+      title: "Telefono",
       data: "telefono",
       className: "text-gray-600",
     },
     {
       title: "Especialidad",
-      data: (row) => row.especialidad.especialidad,
+      data: (row) => row.especialidad.especialidad_,
       className: "text-gray-600",
     },
     {
@@ -95,18 +64,33 @@ const InterfazEmpleados = () => {
   // OPCIONES PARA PERSONALIZAR LA TABLA DE DATOS
   const opcionesTabla = {
     paging: true,
-    pageLength: 10,
+    pageLength: 5, // Default to 5 rows per page
+    lengthMenu: [5, 10, 25, 50], // Options for rows per page
+    pagingType: "full_numbers", // Show full pagination controls (First, Previous, Next, Last)
     responsive: true,
     language: {
-      url: "/Spanish.json", // Español
+      search: "Buscar:", // Rename search to "Buscar"
+      searchPlaceholder: "Buscar empleados...", // Optional placeholder
+      lengthMenu: "Mostrar _MENU_ entradas",
+      info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+      infoEmpty: "Mostrando 0 a 0 de 0 entradas",
+      infoFiltered: "(filtrado de _MAX_ entradas totales)",
+      paginate: {
+        first: "Primero",
+        previous: "Anterior",
+        next: "Siguiente",
+        last: "Último",
+      },
+      zeroRecords: "No se encontraron registros coincidentes",
+      emptyTable: "No hay datos disponibles en la tabla",
     },
   };
 
   //FUNCION PARA OBTENER LOS DATOS
   const fetchDatos = async () => {
     try {
-      const response = await api.get("/Empleados");
-      setEmpleados(response.data);
+      const response = await api.get("/Administracion/Empleados");
+      setEmpleados(response.data.empleados);
     } catch (error) {
       console.log("Error al consumir la API", error);
     }
@@ -114,8 +98,9 @@ const InterfazEmpleados = () => {
 
   const eliminarEmpleado = async (id) => {
     try {
-      const response = await api.delete(`/Empleados/${id}`);
-      if (response.status == 204) {
+      const response = await api.delete(`/Administracion/Empleados/${id}`);
+
+      if (response.status == 200) {
         toast.current.show({
           //Muestra el mensaje de exito
           severity: "success",
@@ -139,8 +124,13 @@ const InterfazEmpleados = () => {
   };
 
   useEffect(() => {
-    login("root", "1234");
     fetchDatos();
+  }, []);
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchDatos(); // Solo se ejecuta cuando refreshTrigger cambia (para actualizaciones posteriores)
+    }
   }, [refreshTrigger]);
 
   const handleEmpleadoAgregado = async (guardar) => {
@@ -168,18 +158,19 @@ const InterfazEmpleados = () => {
       <Toast ref={toast}></Toast>
       {/* Encabezado */}
       <div className="flex justify-between items-center mb-6  px-8 ">
-        <h1 className="text-2xl font-bold text-gray-800">Empleados</h1>
-        <div className="space-x-4">
-          <button
-            onClick={() => setModalEspecialidades(true)} // Abrir modal al hacer clic
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-            Especialidades
-          </button>
-          <button
-            onClick={() => setModalEmpleado(true)} // Open the new employee form modal
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            Agregar Empleado
-          </button>
+        <h1 className="text-2xl font-bold text-gray-800">Gestión Empleados</h1>
+        <div className="flex flex-row gap-4 items-center">
+          <Boton
+            text={"Especialidades"}
+            onClick={() => setModalEspecialidades(true)}
+            className="px-4 py-2 cursor-pointer"
+          />
+          <Boton
+            text={"Agregar Empleado"}
+            icon={IconoCrear}
+            onClick={() => setModalEmpleado(true)}
+            className="px-4 py-2 cursor-pointer"
+          />
         </div>
       </div>
 
@@ -190,7 +181,7 @@ const InterfazEmpleados = () => {
             {/* Botón de cerrar */}
             <button
               onClick={() => setModalEspecialidades(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer">
               <svg
                 className="w-6 h-6"
                 fill="none"
@@ -217,7 +208,7 @@ const InterfazEmpleados = () => {
           <div className="bg-white rounded-lg shadow-lg w-full max-w-[35%] p-6 relative max-h-[82%]  overflow-y-auto">
             <button
               onClick={() => setModalEmpleado(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 cursor-pointer">
               <svg
                 className="w-6 h-6"
                 fill="none"
@@ -238,9 +229,7 @@ const InterfazEmpleados = () => {
       )}
 
       <div className="p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-2xl font-bold mb-4 text-gray-800">
-          Listado de Empleados
-        </h1>
+        <h1 className="text-2xl font-bold mb-4 text-gray-800">Listado</h1>
         <TablaDatos
           //COLUMNAS QUE VA A TENER LA TABLA
           columnas={columnas}
