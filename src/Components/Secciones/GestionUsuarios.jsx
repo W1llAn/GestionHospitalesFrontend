@@ -44,12 +44,12 @@ useEffect(() => {
     const fetchUsuarios = async () => {
       try {
         const response = await api.get("/Administracion/Usuarios");
-
         const usuarios = response.data.usuarios
           .sort((a, b) => b.id - a.id) // Ordenar por id descendente
           .map((usuario, index) => ({
             key: `${index}`,
             data: {
+                usuarioId:usuario.id||'',
                 empleadoId:usuario.empleado?.id ||'',
                 cedula: usuario.empleado?.cedula || '',
                 nombreUsuario: usuario.nombreUsuario,
@@ -73,28 +73,26 @@ useEffect(() => {
       }
     };
     fetchUsuarios();
-    console.log(data);
-    
 }, []);
   
   const handleDelete = (rowData) => {
     confirmDialog({
-      message: `¿Estás seguro de que deseas eliminar el centro médico "${rowData.data.nombre}"?`,
+      message: `¿Estás seguro de que deseas eliminar este usuario "${rowData.data.nombreUsuario}"?`,
       header: "Confirmar Eliminación",
       icon: "pi pi-exclamation-triangle",
       acceptLabel: "Sí, eliminar",
       rejectLabel: "Cancelar",
       accept: async () => {
         try {
-          await api.delete(`/Administracion/CentrosMedicos/${rowData.data.id}`);
+          await api.delete(`/Administracion/Usuarios/${rowData.data.usuarioId}`);
           const updateData = data.filter(
-            (item) => item.data.id !== rowData.data.id
+            (item) => item.data.usuarioId !== rowData.data.usuarioId
           );
           setData(updateData);
           toast.current.show({
             severity: "success",
-            summary: "Centro eliminado",
-            detail: "El centro médico ha sido eliminado exitosamente.",
+            summary: "Usuario eliminado",
+            detail: "El usuario ha sido eliminado exitosamente.",
             life: 3000,
           });
         } catch (error) {
@@ -102,7 +100,7 @@ useEffect(() => {
           toast.current.show({
             severity: "error",
             summary: "Error",
-            detail: "No se pudo eliminar el centro médico.",
+            detail: "No se pudo eliminar al usuario.",
             life: 3000,
           });
         }
@@ -111,7 +109,7 @@ useEffect(() => {
   };
 
 // Manejar la apertura del modal para edición
-const handleEdit = (rowData) => {
+/*const handleEdit = (rowData) => {
     setIsEditing(true);
     setCentroSeleccionado(rowData);
     setNuevoUsuario({
@@ -120,7 +118,7 @@ const handleEdit = (rowData) => {
       direccion: rowData.data.direccion,
     });
     setModalVisible(true);
-  };
+  };*/
 
   //guardar usuario 
   const handleGuardarUsuario = async () => {
