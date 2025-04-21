@@ -3,6 +3,8 @@ import TablaDatos from "../TablaDatos";
 import api from "../../api/config";
 import { Toast } from "primereact/toast";
 import { InputText } from "primereact/inputtext";
+import Boton from "../Boton";
+import { IconoCrear } from "../../assets/IconosComponentes";
 
 const InterfazEmpleados = () => {
   const toast = useRef();
@@ -148,12 +150,28 @@ const InterfazEmpleados = () => {
     }
   };
 
+  // OPCIONES PARA PERSONALIZAR LA TABLA DE DATOS
   const opcionesTabla = {
     paging: true,
-    pageLength: 5,
+    pageLength: 5, // Default to 5 rows per page
+    lengthMenu: [5, 10, 25, 50], // Options for rows per page
+    pagingType: "full_numbers", // Show full pagination controls (First, Previous, Next, Last)
     responsive: true,
     language: {
-      url: "/Spanish.json",
+      search: "Buscar:", // Rename search to "Buscar"
+      searchPlaceholder: "Buscar empleados...", // Optional placeholder
+      lengthMenu: "Mostrar _MENU_ entradas",
+      info: "Mostrando _START_ a _END_ de _TOTAL_ entradas",
+      infoEmpty: "Mostrando 0 a 0 de 0 entradas",
+      infoFiltered: "(filtrado de _MAX_ entradas totales)",
+      paginate: {
+        first: "Primero",
+        previous: "Anterior",
+        next: "Siguiente",
+        last: "Último",
+      },
+      zeroRecords: "No se encontraron registros coincidentes",
+      emptyTable: "No hay datos disponibles en la tabla",
     },
   };
 
@@ -162,14 +180,15 @@ const InterfazEmpleados = () => {
       <Toast ref={toast}></Toast>
       <div className="flex justify-between items-center mb-6 px-4 py-3 bg-gray-50 rounded-lg border border-gray-200">
         <h1 className="text-2xl font-bold text-gray-800">Especialidades</h1>
-        <button
+        <Boton
+          text={"Agregar Especialidad"}
           onClick={() => {
             setMostrarFormulario(true);
             setEdit(false);
           }}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md border border-blue-700 hover:bg-blue-700 transition-colors shadow-sm text-sm font-medium">
-          Agregar Especialidad
-        </button>
+          icon={IconoCrear}
+          className="cursor-pointer"
+        />
       </div>
 
       {/* Formulario oculto */}
@@ -187,17 +206,18 @@ const InterfazEmpleados = () => {
             <label htmlFor="especialidad_">Nombre de la especialidad</label>
           </span>
           <div className="flex gap-2">
-            <button
+            <Boton
+              text={"Guardar"}
               onClick={guardarEspecialidad}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition-colors shadow-sm text-sm font-medium">
-              Guardar
-            </button>
+              className="cursor-pointer"
+            />
+
             <button
               onClick={() => {
                 setNuevaEspecialidad("");
                 setMostrarFormulario(false);
               }}
-              className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm hover:bg-gray-400">
+              className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm hover:bg-gray-400 cursor-pointer">
               Cancelar
             </button>
           </div>
