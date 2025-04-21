@@ -310,17 +310,19 @@ function CentrosMedicos() {
         <div className="grid gap-8 mt-8">
           <span className="p-float-label">
             <InputText
-              id="nombre"
+              id="nombreCentro"
+              name="nombreCentro"
               value={nuevoCentro.nombre}
               onChange={(e) =>
                 setNuevoCentro({ ...nuevoCentro, nombre: e.target.value })
               }
             />
-            <label htmlFor="nombre">Nombre</label>
+            <label htmlFor="nombreCentro">Nombre</label>
           </span>
           <span className="p-float-label">
             <Dropdown
-              id="ciudad"
+              id="ciudadCentro"
+              name="ciudadCentro"
               value={nuevoCentro.ciudad}
               options={ciudadOptions}
               onChange={(e) =>
@@ -328,17 +330,18 @@ function CentrosMedicos() {
               }
               placeholder="Selecciona una ciudad"
             />
-            <label htmlFor="ciudad">Ciudad</label>
+            <label htmlFor="ciudadCentro">Ciudad</label>
           </span>
           <span className="p-float-label">
             <InputText
-              id="direccion"
+              id="direccionCentro"
+              name="direccionCentro"
               value={nuevoCentro.direccion}
               onChange={(e) =>
                 setNuevoCentro({ ...nuevoCentro, direccion: e.target.value })
               }
             />
-            <label htmlFor="direccion">Dirección</label>
+            <label htmlFor="direccionCentro">Dirección</label>
           </span>
         </div>
       </ModalFormulario>
