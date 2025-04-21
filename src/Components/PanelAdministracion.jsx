@@ -8,10 +8,9 @@ import {
   IconoUsuarios,
 } from "../assets/IconosComponentes";
 
-import InterfazEmpleados from "./InterfazEmpleados";
+import InterfazEmpleados from "./Secciones/InterfazEmpleados";
 
 import CentrosMedicos from "./Secciones/CentrosMedicos";
-
 
 const navItems = [
   { key: "empleados", label: "Empleados", icon: <IconoEmpleados /> },
