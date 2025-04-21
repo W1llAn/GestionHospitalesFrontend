@@ -1,12 +1,17 @@
-import TablaDatos from "./TablaDatos";
-import { useState, useEffect } from "react";
-import api from "../api/config";
+import TablaDatos from "../TablaDatos";
+import { useState, useEffect, useRef } from "react";
+import api from "../../api/config";
 import InterfazEspecialidades from "./InterfazEspecialidades";
-import FormularioEmpleado from "./FormularioEmpleado";
+import FormularioEmpleado from "../FormularioEmpleado";
+import { Toast } from "primereact/toast";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
+
 const InterfazEmpleados = () => {
+  const toast = useRef();
   const [empleados, setEmpleados] = useState([]);
   const [modalEspecialidades, setModalEspecialidades] = useState(false);
   const [modalEmpleado, setModalEmpleado] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // Estado para disparar useEffect
 
   //METODO PARA HACER LOGIN SOLO PRUEBAS
   const login = async (nombreUsuario, contrasenia) => {
@@ -65,6 +70,12 @@ const InterfazEmpleados = () => {
       className: "text-gray-600",
     },
     {
+      title: "Cargo",
+      data: (row) => row.tipo_Empleado.tipo,
+      className: "text-gray-600",
+    },
+
+    {
       title: "Teléfono",
       data: "telefono",
       className: "text-gray-600",
@@ -72,6 +83,11 @@ const InterfazEmpleados = () => {
     {
       title: "Especialidad",
       data: (row) => row.especialidad.especialidad,
+      className: "text-gray-600",
+    },
+    {
+      title: "Salario",
+      data: "salario",
       className: "text-gray-600",
     },
   ];
@@ -96,20 +112,62 @@ const InterfazEmpleados = () => {
     }
   };
 
+  const eliminarEmpleado = async (id) => {
+    try {
+      const response = await api.delete(`/Empleados/${id}`);
+      if (response.status == 204) {
+        toast.current.show({
+          //Muestra el mensaje de exito
+          severity: "success",
+          summary: "Empleado Creado",
+          detail: "El empleado ha sido eliminado con éxito.",
+          life: 3000,
+        });
+        onEmpleadoEditado();
+      } else {
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "No se puede eliminar el empleado ",
+          life: 3000,
+        });
+      }
+      console.log(response.statusText);
+    } catch (error) {
+      console.log("Error al eliminar", error);
+    }
+  };
+
   useEffect(() => {
     login("root", "1234");
     fetchDatos();
-  }, []);
+  }, [refreshTrigger]);
 
-  const handleEmpleadoAgregado = async () => {
-    await fetchDatos(); // Refresh the employee list
-    setModalEmpleado(false); // Close the modal
+  const handleEmpleadoAgregado = async (guardar) => {
+    await fetchDatos(); // Refresca los datos de la tabla
+    setModalEmpleado(false); // Cierra el modal
+    if (guardar) {
+      toast.current.show({
+        //Muestra el mensaje de exito
+        severity: "success",
+        summary: "Empleado Creado",
+        detail: "El empleado ha sido creado con éxito.",
+        life: 3000,
+      });
+    }
+  };
+
+  // Función para manejar la edición desde TablaDatos
+  const onEmpleadoEditado = () => {
+    setRefreshTrigger((prev) => prev + 1); // Incrementa para disparar useEffect
   };
 
   return (
     <>
+      <ConfirmDialog />
+      <Toast ref={toast}></Toast>
       {/* Encabezado */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center mb-6  px-8 ">
         <h1 className="text-2xl font-bold text-gray-800">Empleados</h1>
         <div className="space-x-4">
           <button
@@ -156,7 +214,7 @@ const InterfazEmpleados = () => {
       {/* Modal Agregar Empleado */}
       {modalEmpleado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6 relative">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-[35%] p-6 relative max-h-[82%]  overflow-y-auto">
             <button
               onClick={() => setModalEmpleado(false)}
               className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
@@ -184,9 +242,18 @@ const InterfazEmpleados = () => {
           Listado de Empleados
         </h1>
         <TablaDatos
+          //COLUMNAS QUE VA A TENER LA TABLA
           columnas={columnas}
+          //DATOS QUE SE VAN A MOSTRAR
           datos={empleados}
+          //OPCIONES PERSONALOZABLES
           opciones={opcionesTabla}
+          //TIPO DE TABLA PARA EL MODAL DE EDITAR
+          tipo={"empleados"}
+          //DISPARADOR PARA REFRESCAR EL COMPONENTE PADRE
+          datoEditado={onEmpleadoEditado}
+          //METODO PARA ELIMINAR UN REGISTRO
+          datoEliminado={eliminarEmpleado}
         />
       </div>
     </>
