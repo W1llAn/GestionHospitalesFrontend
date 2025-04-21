@@ -8,11 +8,12 @@ import {
   IconoUsuarios,
 } from "../assets/IconosComponentes";
 
-import InterfazEmpleados from "./InterfazEmpleados";
+import InterfazEmpleados from "./Secciones/InterfazEmpleados";
 
 import CentrosMedicos from "./Secciones/CentrosMedicos";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+
 
 const navItems = [
   { key: "empleados", label: "Empleados", icon: <IconoEmpleados /> },
