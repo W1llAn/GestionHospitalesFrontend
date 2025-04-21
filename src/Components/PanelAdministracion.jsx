@@ -9,6 +9,7 @@ import {
 } from "../assets/IconosComponentes";
 
 import InterfazEmpleados from "./Secciones/InterfazEmpleados";
+import InterfazReportes from "./Secciones/InterfazReportes";
 
 import CentrosMedicos from "./Secciones/CentrosMedicos";
 import { useNavigate } from "react-router-dom";
@@ -62,7 +63,7 @@ const PanelAdministracion = () => {
       case "centroMedico":
         return <CentrosMedicos />;
       case "reportes":
-        return <h1>Componente Reportes</h1>;
+        return <InterfazReportes />;
       case "gestionUsuarios":
         return <h1>Gestión de Usuarios</h1>;
       default:
