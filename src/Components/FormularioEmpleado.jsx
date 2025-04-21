@@ -6,6 +6,7 @@ import { validarTelefono } from "./Validaciones/validaciones";
 import { Toast } from "primereact/toast";
 import { InputText } from "primereact/inputtext";
 import { Dropdown } from "primereact/dropdown";
+import Boton from "./Boton";
 
 const FormularioEmpleado = ({
   onEmpleadoAgregado,
@@ -157,7 +158,9 @@ const FormularioEmpleado = ({
   return (
     <div className="overflow-y-auto">
       <Toast ref={toast}></Toast>
-      <h2 className="text-xl font-bold mb-4 text-gray-800">Agregar Empleado</h2>
+      <h2 className="text-xl font-bold mb-4 text-gray-800">
+        {empleadoParaEditar ? "Editar Empleado" : "Agregar Empleado"}
+      </h2>
       <form className="space-y-8" onSubmit={handleSubmit}>
         {/* Campos de texto normales */}
         <span className="p-float-label mt-6">
@@ -274,14 +277,10 @@ const FormularioEmpleado = ({
           <button
             type="button"
             onClick={() => onEmpleadoAgregado(false)}
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
+            className="bg-gray-300 text-gray-800 px-4 py-2 rounded-md text-sm hover:bg-gray-400 cursor-pointer">
             Cancelar
           </button>
-          <button
-            type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-            Guardar
-          </button>
+          <Boton text={"Guardar"} type="submit" className="cursor-pointer" />
         </div>
       </form>
     </div>
