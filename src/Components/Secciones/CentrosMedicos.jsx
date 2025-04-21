@@ -14,7 +14,7 @@ import { TreeTable } from "primereact/treetable";
 import { Column } from "primereact/column";
 import accionesTemplate from "../AccionesTemplate";
 import ModalFormulario from "../ModalFormulario";
-import axios from "axios";
+import api from "../../api/config";
 import { Toast } from "primereact/toast";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Dropdown } from "primereact/dropdown";
@@ -35,24 +35,13 @@ function CentrosMedicos() {
   ];
   const [data, setData] = useState([]);
 
-  // Token de autenticación (reemplaza con el token real obtenido del backend)
-  const TOKEN =
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwidW5pcXVlX25hbWUiOiJyb290IiwiVGlwb0VtcGxlYWRvIjoiQWRtaW5pc3RyYWRvciIsIkNlbnRyb01lZGljbyI6IkNlbnRyYWwiLCJhdWQiOiJ1c2VyIiwiaXNzIjoiTWljcm9zZXJ2aWNpby1BdXRlbnRpY2FjaW9uIiwiZXhwIjoxNzQ1NjIwNzAyLCJpYXQiOjE3NDUwMjA3MDIsIm5iZiI6MTc0NTAyMDcwMn0.isGRJoTOEa7aR84HCz36t3DR4GCBSYZ17TIqzZrGLag";
-
-  // Configuración de axios con el token
-  const api = axios.create({
-    baseURL: "https://localhost:7256/api/Centro_Medico",
-    headers: {
-      Authorization: `Bearer ${TOKEN}`,
-    },
-  });
-
   // Cargar centros médicos al montar el componente
   useEffect(() => {
     const fetchCentrosMedicos = async () => {
       try {
-        const response = await api.get("");
-        const centros = response.data
+        const response = await api.get("/Administracion/CentrosMedicos");
+
+        const centros = response.data.centros
           .sort((a, b) => b.id - a.id) // Ordenar por id descendente
           .map((centro, index) => ({
             key: `${index}`,
@@ -102,12 +91,15 @@ function CentrosMedicos() {
     try {
       if (isEditing) {
         // Editar centro médico
-        const response = await api.put(`/${centroSeleccionado.data.id}`, {
-          id: centroSeleccionado.data.id,
-          nombre: nuevoCentro.nombre,
-          ciudad: nuevoCentro.ciudad,
-          direccion: nuevoCentro.direccion,
-        });
+        const response = await api.put(
+          `/Administracion/CentrosMedicos/${centroSeleccionado.data.id}`,
+          {
+            id: centroSeleccionado.data.id,
+            nombre: nuevoCentro.nombre,
+            ciudad: nuevoCentro.ciudad,
+            direccion: nuevoCentro.direccion,
+          }
+        );
 
         // Actualizar la lista de centros
         const updatedData = data.map((item) =>
@@ -132,7 +124,7 @@ function CentrosMedicos() {
           life: 3000,
         });
       } else {
-        const response = await api.post("", {
+        const response = await api.post("/Administracion/CentrosMedicos", {
           nombre: nuevoCentro.nombre,
           ciudad: nuevoCentro.ciudad,
           direccion: nuevoCentro.direccion,
@@ -178,8 +170,6 @@ function CentrosMedicos() {
   };
 
   const handleDelete = (rowData) => {
-    console.log("Eliminar", rowData);
-
     confirmDialog({
       message: `¿Estás seguro de que deseas eliminar el centro médico "${rowData.data.nombre}"?`,
       header: "Confirmar Eliminación",
@@ -188,7 +178,7 @@ function CentrosMedicos() {
       rejectLabel: "Cancelar",
       accept: async () => {
         try {
-          await api.delete(`/${rowData.data.id}`);
+          await api.delete(`/Administracion/CentrosMedicos/${rowData.data.id}`);
           const updateData = data.filter(
             (item) => item.data.id !== rowData.data.id
           );
@@ -320,17 +310,19 @@ function CentrosMedicos() {
         <div className="grid gap-8 mt-8">
           <span className="p-float-label">
             <InputText
-              id="nombre"
+              id="nombreCentro"
+              name="nombreCentro"
               value={nuevoCentro.nombre}
               onChange={(e) =>
                 setNuevoCentro({ ...nuevoCentro, nombre: e.target.value })
               }
             />
-            <label htmlFor="nombre">Nombre</label>
+            <label htmlFor="nombreCentro">Nombre</label>
           </span>
           <span className="p-float-label">
             <Dropdown
-              id="ciudad"
+              id="ciudadCentro"
+              name="ciudadCentro"
               value={nuevoCentro.ciudad}
               options={ciudadOptions}
               onChange={(e) =>
@@ -338,17 +330,18 @@ function CentrosMedicos() {
               }
               placeholder="Selecciona una ciudad"
             />
-            <label htmlFor="ciudad">Ciudad</label>
+            <label htmlFor="ciudadCentro">Ciudad</label>
           </span>
           <span className="p-float-label">
             <InputText
-              id="direccion"
+              id="direccionCentro"
+              name="direccionCentro"
               value={nuevoCentro.direccion}
               onChange={(e) =>
                 setNuevoCentro({ ...nuevoCentro, direccion: e.target.value })
               }
             />
-            <label htmlFor="direccion">Dirección</label>
+            <label htmlFor="direccionCentro">Dirección</label>
           </span>
         </div>
       </ModalFormulario>
