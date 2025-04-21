@@ -108,14 +108,14 @@ const TablaDatos = ({
       const tipo =
         rowData["nombre"] != null
           ? "el empleado"
-          : rowData["especialidad"] != null
+          : rowData["especialidad_"] != null
           ? "la especialidad"
           : null;
       const nombre =
         rowData["nombre"] != null
           ? rowData["nombre"]
-          : rowData["especialidad"] != null
-          ? rowData["especialidad"]
+          : rowData["especialidad_"] != null
+          ? rowData["especialidad_"]
           : null;
       eliminarRegistro(id, nombre, tipo);
     });

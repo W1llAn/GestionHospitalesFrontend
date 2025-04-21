@@ -15,13 +15,13 @@ const InterfazEmpleados = () => {
   const columnas = [
     {
       title: "especialidad",
-      data: "especialidad",
+      data: "especialidad_",
       className: "font-medium text-gray-900",
     },
   ];
 
   const mostrarEditarEspecialidad = (formData) => {
-    const especialidadForm = formData["especialidad"];
+    const especialidadForm = formData["especialidad_"];
     setEdit(true);
     setNuevaEspecialidad(especialidadForm);
     console.log(especialidadForm);
@@ -35,10 +35,10 @@ const InterfazEmpleados = () => {
       console.log(formData);
 
       const response = await api.put(
-        `/Especialidades/${formData["id"]}`,
+        `/Administracion/Especialidades/${formData["id"]}`,
         formData
       );
-      if (response.status == 204) {
+      if (response.status == 200) {
         toast.current.show({
           //Muestra el mensaje de exito
           severity: "success",
@@ -64,12 +64,12 @@ const InterfazEmpleados = () => {
   //CREAR UNA NUEVA ESPECIALIDAD
   const crearEspecialidad = async () => {
     try {
-      const response = await api.post("/Especialidades", {
+      const response = await api.post("/Administracion/Especialidades", {
         especialidad: nuevaEspecialidad,
       });
       console.log(response.status);
 
-      if (response.status == 201) {
+      if (response.status == 200) {
         toast.current.show({
           //Muestra el mensaje de exito
           severity: "success",
@@ -94,8 +94,8 @@ const InterfazEmpleados = () => {
   //OBTENER LAS ESPECIALIDADES
   const fetchEspecialidades = async () => {
     try {
-      const response = await api.get("/Especialidades");
-      setEspecialidades(response.data);
+      const response = await api.get("/Administracion/Especialidades");
+      setEspecialidades(response.data.especialidades);
     } catch (error) {
       console.log("Error al obtener las especialidades", error);
     }
@@ -104,8 +104,8 @@ const InterfazEmpleados = () => {
   //ELIMINAR UNA ESPECIALIDAD
   const eliminarEspecialidad = async (id) => {
     try {
-      const response = await api.delete(`/Especialidades/${id}`);
-      if (response.status == 204) {
+      const response = await api.delete(`/Administracion/Especialidades/${id}`);
+      if (response.status == 200) {
         toast.current.show({
           //Muestra el mensaje de exito
           severity: "success",
@@ -137,7 +137,7 @@ const InterfazEmpleados = () => {
       if (!isEdit) {
         await crearEspecialidad();
       } else {
-        formData["especialidad"] = nuevaEspecialidad;
+        formData["especialidad_"] = nuevaEspecialidad;
         await editarEspecialidad(formData);
       }
       setNuevaEspecialidad("");
@@ -178,13 +178,13 @@ const InterfazEmpleados = () => {
           <span className="p-float-label mb-4">
             <InputText
               type="text"
-              name="especialidad"
+              name="especialidad_"
               value={nuevaEspecialidad}
               required
               onChange={(e) => setNuevaEspecialidad(e.target.value)}
               className="border rounded-md w-full px-3 py-2 mb-4 text-sm"
             />
-            <label htmlFor="especialidad">Nombre de la especialidad</label>
+            <label htmlFor="especialidad_">Nombre de la especialidad</label>
           </span>
           <div className="flex gap-2">
             <button

@@ -14,8 +14,8 @@ const FormularioEmpleado = ({
   const toast = useRef();
   // Estado que almacena los datos del formulario
   const [formData, setFormData] = useState({
-    centro_medicoID: "",
-    tipo_empleadoID: "",
+    centroMedicoID: "",
+    tipoEmpleadoID: "",
     nombre: "",
     cedula: "",
     especialidadID: "",
@@ -28,8 +28,8 @@ const FormularioEmpleado = ({
   useEffect(() => {
     if (empleadoParaEditar) {
       setFormData({
-        centro_medicoID: empleadoParaEditar.centro_Medico.id || "",
-        tipo_empleadoID: empleadoParaEditar.tipo_Empleado.id || "",
+        centroMedicoID: empleadoParaEditar.centroMedico.id || "",
+        tipoEmpleadoID: empleadoParaEditar.tipoEmpleado.id || "",
         nombre: empleadoParaEditar.nombre || "",
         cedula: empleadoParaEditar.cedula || "",
         especialidadID: empleadoParaEditar.especialidad.id || "",
@@ -55,8 +55,8 @@ const FormularioEmpleado = ({
   // Consulta API para obtener centros médicos
   const fetchCentrosMedicos = async () => {
     try {
-      const response = await api.get("/Centro_Medico");
-      setCentroMedicos(response.data);
+      const response = await api.get("/Administracion/CentrosMedicos");
+      setCentroMedicos(response.data.centros);
     } catch (error) {
       console.log("Error al consultar los centros médicos", error);
     }
@@ -65,8 +65,8 @@ const FormularioEmpleado = ({
   // Consulta API para obtener especialidades
   const fetchEspecialidades = async () => {
     try {
-      const response = await api.get("/Especialidades");
-      setEspecialidades(response.data);
+      const response = await api.get("/Administracion/Especialidades");
+      setEspecialidades(response.data.especialidades);
     } catch (error) {
       console.log("Error al consultar las especialidades", error);
     }
@@ -75,8 +75,8 @@ const FormularioEmpleado = ({
   // Consulta API para obtener tipos de empleados
   const fetchTipoEmpleado = async () => {
     try {
-      const response = await api.get("/Tipo_Empleado");
-      setTipoEmpleado(response.data);
+      const response = await api.get("/Administracion/TiposEmpleados");
+      setTipoEmpleado(response.data.tipos);
     } catch (error) {
       console.log("Error al consultar los tipos de empleados", error);
     }
@@ -129,8 +129,8 @@ const FormularioEmpleado = ({
     try {
       const empleadoData = {
         id: esEdicion ? empleadoParaEditar.id : 0,
-        centro_medicoID: parseInt(formData.centro_medicoID),
-        tipo_empleadoID: parseInt(formData.tipo_empleadoID),
+        centroMedicoID: parseInt(formData.centroMedicoID),
+        tipoEmpleadoID: parseInt(formData.tipoEmpleadoID),
         nombre: formData.nombre,
         cedula: formData.cedula,
         especialidadID: parseInt(formData.especialidadID),
@@ -138,11 +138,15 @@ const FormularioEmpleado = ({
         email: formData.email,
         salario: parseFloat(formData.salario),
       };
+      console.log(empleadoData);
 
       if (esEdicion) {
-        await api.put(`/Empleados/${empleadoParaEditar.id}`, empleadoData);
+        await api.put(
+          `/Administracion/Empleados/${empleadoParaEditar.id}`,
+          empleadoData
+        );
       } else {
-        await api.post("/Empleados", empleadoData);
+        await api.post("/Administracion/Empleados", empleadoData);
       }
       onEmpleadoAgregado(true); // Llama a la función padre para actualizar la lista
     } catch (error) {
@@ -217,8 +221,8 @@ const FormularioEmpleado = ({
         {/* COMBOBOX para seleccionar centro médico */}
         <span className="p-float-label">
           <Dropdown
-            name="centro_medicoID"
-            value={formData.centro_medicoID}
+            name="centroMedicoID"
+            value={formData.centroMedicoID}
             onChange={handleChange}
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -228,14 +232,14 @@ const FormularioEmpleado = ({
             }))}
             placeholder="Seleccione un centro"
           />
-          <label htmlFor="centro_medicoID">Centro Médico</label>
+          <label htmlFor="centroMedicoID">Centro Médico</label>
         </span>
 
         {/* COMBOBOX para seleccionar tipo de empleado */}
         <span className="p-float-label">
           <Dropdown
-            name="tipo_empleadoID"
-            value={formData.tipo_empleadoID}
+            name="tipoEmpleadoID"
+            value={formData.tipoEmpleadoID}
             onChange={handleChange}
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -245,7 +249,7 @@ const FormularioEmpleado = ({
             }))}
             placeholder="Seleccione un tipo"
           />
-          <label htmlFor="tipo_empleadoID">Tipo de Empleado</label>
+          <label htmlFor="tipoEmpleadoID">Tipo de Empleado</label>
         </span>
 
         {/* COMBOBOX para seleccionar especialidad */}
@@ -257,7 +261,7 @@ const FormularioEmpleado = ({
             required
             className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
             options={especialidades.map((esp) => ({
-              label: esp.especialidad,
+              label: esp.especialidad_,
               value: esp.id,
             }))}
             placeholder="Seleccione una especialidad"

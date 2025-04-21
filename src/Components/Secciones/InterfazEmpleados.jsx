@@ -13,39 +13,6 @@ const InterfazEmpleados = () => {
   const [modalEmpleado, setModalEmpleado] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Estado para disparar useEffect
 
-  //METODO PARA HACER LOGIN SOLO PRUEBAS
-  const login = async (nombreUsuario, contrasenia) => {
-    try {
-      // Hacer la solicitud POST a la API
-      const response = await fetch("https://localhost:7148/api/Usuarios", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          nombreUsuario: nombreUsuario,
-          contrasenia: contrasenia,
-        }),
-      });
-
-      // Verificar si la respuesta es exitosa
-      if (!response.ok) {
-        throw new Error("Error en el login: " + response.statusText);
-      }
-
-      // Obtener el token como texto (en lugar de JSON)
-      const token = await response.text();
-
-      // Guardar el token en sessionStorage
-      sessionStorage.setItem("jwtToken", token);
-
-      return token;
-    } catch (error) {
-      console.error("Error durante el login:", error.message);
-      throw error;
-    }
-  };
-
   // SE DEFINEN LAS COLUMNAS QUE VA A USAR EL COMPONENTE
   const columnas = [
     {
@@ -66,23 +33,23 @@ const InterfazEmpleados = () => {
     {
       title: "Centro Médico",
       //CON LA FUNCION ROW SE ACCEDE A LOS DENTRO DE LOS OBJETOS JSON
-      data: (row) => row.centro_Medico.nombre,
+      data: (row) => row.centroMedico.nombre,
       className: "text-gray-600",
     },
     {
       title: "Cargo",
-      data: (row) => row.tipo_Empleado.tipo,
+      data: (row) => row.tipoEmpleado.tipo,
       className: "text-gray-600",
     },
 
     {
-      title: "Teléfono",
+      title: "Telefono",
       data: "telefono",
       className: "text-gray-600",
     },
     {
       title: "Especialidad",
-      data: (row) => row.especialidad.especialidad,
+      data: (row) => row.especialidad.especialidad_,
       className: "text-gray-600",
     },
     {
@@ -105,8 +72,8 @@ const InterfazEmpleados = () => {
   //FUNCION PARA OBTENER LOS DATOS
   const fetchDatos = async () => {
     try {
-      const response = await api.get("/Empleados");
-      setEmpleados(response.data);
+      const response = await api.get("/Administracion/Empleados");
+      setEmpleados(response.data.empleados);
     } catch (error) {
       console.log("Error al consumir la API", error);
     }
@@ -114,8 +81,9 @@ const InterfazEmpleados = () => {
 
   const eliminarEmpleado = async (id) => {
     try {
-      const response = await api.delete(`/Empleados/${id}`);
-      if (response.status == 204) {
+      const response = await api.delete(`/Administracion/Empleados/${id}`);
+
+      if (response.status == 200) {
         toast.current.show({
           //Muestra el mensaje de exito
           severity: "success",
@@ -139,8 +107,13 @@ const InterfazEmpleados = () => {
   };
 
   useEffect(() => {
-    login("root", "1234");
     fetchDatos();
+  }, []);
+
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchDatos(); // Solo se ejecuta cuando refreshTrigger cambia (para actualizaciones posteriores)
+    }
   }, [refreshTrigger]);
 
   const handleEmpleadoAgregado = async (guardar) => {
