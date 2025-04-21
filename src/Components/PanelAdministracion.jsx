@@ -13,6 +13,7 @@ import InterfazEmpleados from "./Secciones/InterfazEmpleados";
 import CentrosMedicos from "./Secciones/CentrosMedicos";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import GestionUsuarios from "./Secciones/GestionUsuarios"
 
 
 const navItems = [
@@ -65,7 +66,7 @@ const PanelAdministracion = () => {
       case "reportes":
         return <h1>Componente Reportes</h1>;
       case "gestionUsuarios":
-        return <h1>Gestión de Usuarios</h1>;
+        return <GestionUsuarios/>;
       default:
         return <h1>Sección: {activeSection}</h1>;
     }
