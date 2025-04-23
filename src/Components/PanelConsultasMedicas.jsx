@@ -20,7 +20,7 @@ const navItems = [
 
 const PanelConsultasMedicas = () => {
   const navigate = useNavigate();
-  const [activeSection, setActiveSection] = useState("empleados");
+  const [activeSection, setActiveSection] = useState("consultasMedicas");
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
@@ -36,6 +36,7 @@ const PanelConsultasMedicas = () => {
         setUserData({
           username: decoded.unique_name || "Usuario desconocido",
           email: decoded.email || "Sin email registrado",
+          especialidad: decoded.Especialidad || "Sin especialidad",
         });
       } catch (error) {
         console.error("Error decod Debe ser: codificando el token:", error);
@@ -105,14 +106,17 @@ const PanelConsultasMedicas = () => {
               Perfil
             </h4>
 
-            <div className="flex items-center gap-3 mb-4 mx-6 hover:">
+            <div className="flex items-center gap-3 mb-4 mx-6 ">
               <IconoPerfil />
-              <div>
-                <p className="text-text-primary font-semibold text-sm">
+              <div className="max-w-3/4">
+                <p className="text-text-primary font-semibold text-sm truncate">
                   {userData ? userData.username : ""}
                 </p>
-                <span className="text-text-secondary font-light text-sm">
+                <span className="text-text-secondary font-light text-sm truncate block">
                   {userData ? userData.email : ""}
+                </span>
+                <span className="text-text-secondary font-light text-sm truncate block">
+                  {userData ? userData.especialidad : ""}
                 </span>
               </div>
             </div>
