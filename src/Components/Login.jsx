@@ -7,6 +7,7 @@ import Boton from "./Boton";
 import { useNavigate } from "react-router-dom";
 import api from "../api/config";
 import { Toast } from "primereact/toast";
+import { jwtDecode } from "jwt-decode";
 
 function Login() {
   const [username, setUsername] = useState("");
@@ -40,10 +41,21 @@ function Login() {
         detail: "Bienvenido al sistema.",
         life: 3000,
       });
-      // Redirigir a PanelAdministracion
-      setTimeout(() => {
-        navigate("/administracion");
-      }, 1000);
+
+      // Redirigir a la ruta correspondiente según el tipo de usuario
+      const decodedToken = jwtDecode(token);
+      const tipoEmpleado = decodedToken.TipoEmpleado;
+      if (tipoEmpleado === "Administrador") {
+        setTimeout(() => {
+          navigate("/administracion");
+        }, 3000);
+      } else if (tipoEmpleado === "Medico") {
+        setTimeout(() => {
+          navigate("/hospital");
+        }, 3000);
+      } else {
+        navigate("/login"); // Redirigir a login si el tipo de empleado no es válido
+      }
     } catch (error) {
       console.error("Error en el login:", error);
       const errorMessage =
