@@ -35,9 +35,17 @@ const [nuevoUsuario, setNuevoUsuario] = useState({
     empleadoId:""
 });
 const[empleados,setEmpleados]=useState([]);
+const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
-
-
+const [editNuevoUsuario, setEditNuevoUsuario] = useState({
+  cedula: "",
+  nombreEmpleado: "",
+  empleadoId:"",
+  usuarioId:"",
+  usuario:"",
+  contrasenia: "",
+  prevContrasenia: "",
+});
 
 // Cargar usuarios al montar el componente
 useEffect(() => {
@@ -56,7 +64,8 @@ useEffect(() => {
                 empleado: usuario.empleado?.nombre || '',
                 correo: usuario.empleado?.email || '',
                 centroMedico: usuario.empleado?.centroMedico?.nombre || '',
-                telefono: usuario.empleado?.telefono || ''
+                telefono: usuario.empleado?.telefono || '',
+                contrasenia:usuario.contrasenia||'',
               },
             children: [],
           }));
@@ -109,31 +118,100 @@ useEffect(() => {
   };
 
 // Manejar la apertura del modal para edición
-/*const handleEdit = (rowData) => {
+const handleEdit = (rowData) => {
     setIsEditing(true);
-    setCentroSeleccionado(rowData);
-    setNuevoUsuario({
-      nombre: rowData.data.nombre,
-      ciudad: rowData.data.ciudad,
-      direccion: rowData.data.direccion,
+    setUsuarioSeleccionado(rowData);
+    setEditNuevoUsuario({
+      cedula: rowData.data.cedula,
+      nombreEmpleado: rowData.data.empleado || "",
+      empleadoId:rowData.data.empleadoId,
+      usuarioId:rowData.data.usuarioId,
+      usuario: rowData.data.nombreUsuario,
+      contrasenia: "", // Vacío por seguridad, 
+      prevContrasenia:rowData.data.contrasenia,
     });
-    setModalVisible(true);
-  };*/
+    setModalVisible(true);    
+  };
 
   //guardar usuario 
   const handleGuardarUsuario = async () => {
-    if (!nuevoUsuario.usuario || !nuevoUsuario.contrasenia) {
-      toast.current.show({
-        severity: "warn",
-        summary: "Campos incompletos",
-        detail: "Por favor llena al menos nombre y contraseña",
-        life: 3000,
-      });
-      return;
-    }
+      if (!isEditing) {
+        if (!nuevoUsuario.usuario || !nuevoUsuario.contrasenia) {
+          toast.current.show({
+            severity: "warn",
+            summary: "Campos incompletos",
+            detail: "Por favor llena al menos usuario y contraseña.",
+            life: 3000,
+          });
+          return;
+        }
+      }    
     try {
       if (isEditing) {
-        // Handle editing (unchanged)
+        const contraseniaLimpia = editNuevoUsuario.contrasenia.trim();
+       // console.log(contraseniaLimpia,"contra nueva");        
+      // Si la contraseña se modificó, incluirla
+      if (contraseniaLimpia !== "") {
+      // Enviar la solicitud de actualización
+      const response = await api.put(
+        `/Administracion/Usuarios/${editNuevoUsuario.usuarioId}`,
+          {
+          id: editNuevoUsuario.usuarioId,
+          nombreUsuario: editNuevoUsuario.usuario,
+          empleadoId: editNuevoUsuario.empleadoId,
+          contrasenia:contraseniaLimpia,
+          }
+        );
+        editNuevoUsuario.prevContrasenia=contraseniaLimpia;
+      } else {
+      // Enviar la solicitud de actualización
+     //console.log(editNuevoUsuario.prevContrasenia,"contra antigua")
+      
+      const response = await api.put(
+        `/Administracion/Usuarios/${editNuevoUsuario.usuarioId}`,
+        {
+        id: editNuevoUsuario.usuarioId,
+        nombreUsuario: editNuevoUsuario.usuario,
+        empleadoId: editNuevoUsuario.empleadoId,
+        contrasenia:editNuevoUsuario.prevContrasenia,
+        }
+      );
+      }
+      // Actualizar los datos localmente
+      const updatedData = data.map((item) =>
+        item.data.usuarioId === editNuevoUsuario.usuarioId
+          ? {
+              ...item,
+              data: {
+                ...item.data,
+                contrasenia:editNuevoUsuario.prevContrasenia,
+                nombreUsuario: editNuevoUsuario.usuario,
+              },
+            }
+          : item
+      );
+      setData(updatedData);
+
+      // Mostrar el mensaje de éxito
+      toast.current.show({
+        severity: "success",
+        summary: "Usuario actualizado",
+        detail: "El usuario ha sido actualizado exitosamente.",
+        life: 3000,
+      });
+
+      // Resetear el formulario
+      setEditNuevoUsuario({
+        cedula: "",
+        nombreEmpleado: "",
+        empleadoId: "",
+        usuarioId: "",
+        usuario: "",
+        contrasenia: "",
+        prevContrasenia: "",
+      });
+      setIsEditing(false);
+      setModalVisible(false);
       } else {
         // Create new user
         await api.post("/Administracion/Usuarios", {
@@ -149,6 +227,7 @@ useEffect(() => {
           .map((usuario, index) => ({
             key: `${index}`,
             data: {
+              usuarioId:usuario.id||'',
               empleadoId: usuario.empleado?.id || '',
               cedula: usuario.empleado?.cedula || '',
               nombreUsuario: usuario.nombreUsuario,
@@ -156,11 +235,14 @@ useEffect(() => {
               correo: usuario.empleado?.email || '',
               centroMedico: usuario.empleado?.centroMedico?.nombre || '',
               telefono: usuario.empleado?.telefono || '',
+              contrasenia:usuario.contrasenia||'',
             },
             children: [],
           }));
         setData(usuarios);
-  
+
+       
+
         toast.current.show({
           severity: "success",
           summary: "Usuario registrado",
@@ -188,11 +270,20 @@ useEffect(() => {
       });
     }
   };
+  
 const handleCancel = () => {
     setNuevoUsuario({
     usuario: "",
     contrasenia: "",
     id: "",
+    });
+    setEditNuevoUsuario({
+      cedula: "",
+      nombreEmpleado: "",
+      empleadoId: "",
+      usuarioId: "",
+      usuario: "",
+      contrasenia: "", 
     });
     setIsEditing(false);
     setModalVisible(false);
@@ -306,11 +397,12 @@ useEffect(() => {
                 }
               ></Column>
               <Column
-                body={(rowData) =>
-                  accionesTemplate({
-                    rowData,
-                    onDelete: handleDelete,
-                  })
+            body={(rowData) =>
+              accionesTemplate({
+                rowData,
+                onEdit: handleEdit,
+                onDelete: handleDelete,
+              })
                 }
                 header=""
                 style={{ width: "10rem" }}
@@ -319,7 +411,7 @@ useEffect(() => {
           </div>
     
         {/* Modal */} 
-          <ModalFormulario
+        <ModalFormulario
             visible={modalVisible}
             onHide={handleCancel}
             titulo={isEditing ? "Editar Usuario" : "Registrar Usuario"}
@@ -331,81 +423,114 @@ useEffect(() => {
                   className="bg-red-600 hover:bg-red-700"
                 />
                 <Boton
-                  text={isEditing ? "Actualizar" : "Guardar"}
-                  onClick={handleGuardarUsuario}
+                text={isEditing ? "Actualizar" : "Guardar"}
+                onClick={handleGuardarUsuario}
                 />
               </div>
             }
           >
             <div className="grid gap-8 mt-8">
-            <span className="p-float-label">
-                <Dropdown
+              {/* Campo Empleado (Cédula) */}
+              {!isEditing ? (
+                <span className="p-float-label">
+                  <Dropdown
                     id="empleadoU"
                     name="empleadoU"
                     options={empleados
-                        .filter(
-                            (empleado) =>
-                              !data.some((usuario) => usuario.data.empleadoId === empleado.id)
+                      .filter(
+                        (empleado) =>
+                          !data.some(
+                            (usuario) => usuario.data.empleadoId === empleado.id
                           )
-                          
-                        .map((empleado) => ({
-                          label: empleado.cedula,
-                          value: empleado.id,
-                        }))}
+                      )
+                      .map((empleado) => ({
+                        label: empleado.cedula,
+                        value: empleado.id,
+                      }))}
                     value={nuevoUsuario.empleadoId}
                     onChange={(e) => {
-                    const empleadoSeleccionado = empleados.find(emp => emp.id === e.value);
-                    setNuevoUsuario({
+                      const empleadoSeleccionado = empleados.find(
+                        (emp) => emp.id === e.value
+                      );
+                      setNuevoUsuario({
                         ...nuevoUsuario,
                         empleadoId: e.value,
-                        nombreEmpleado: empleadoSeleccionado?.nombre || "",id:empleadoSeleccionado?.id// aquí actualizamos el nombre automáticamente
-                    });
+                        nombreEmpleado: empleadoSeleccionado?.nombre || "",
+                      });
                     }}
                     placeholder="Selecciona un empleado"
                     className="w-full"
-                />
-                <label htmlFor="empleadoU">Empleado (Cédula)</label>
+                  />
+                  <label htmlFor="empleadoU">Empleado (Cédula)</label>
                 </span>
-
+              ) : (
+                 /* Campo cedula del Empleado */
                 <span className="p-float-label">
-                <InputText
-                    id="empleadoNombre"
-                    name="empleadoNombre"
-                    value={nuevoUsuario.nombreEmpleado}
-                    disabled={true}
-                />
-                <label htmlFor="empleadoNombre">Nombre del Empleado</label>
+                  <InputText
+                    id="empleadoCedula"
+                    value={editNuevoUsuario.cedula}
+                    disabled
+                    className="w-full"
+                  />
+                  <label htmlFor="empleadoCedula">Empleado (Cédula)</label>
                 </span>
-
-
-
+              )}
+              {/* Campo Nombre del Empleado */}
               <span className="p-float-label">
                 <InputText
-                  id="usuario"
-                  name="usuario"
-                  value={nuevoUsuario.usuario}
-                  onChange={(e) =>
-                    setNuevoUsuario({ ...nuevoUsuario, usuario: e.target.value })
-                  }
+                  id="empleadoNombre"
+                  name="empleadoNombre"
+                  value={isEditing ? editNuevoUsuario.nombreEmpleado : nuevoUsuario.nombreEmpleado}
+                  disabled={true}
                 />
+                <label htmlFor="empleadoNombre">Nombre del Empleado</label>
+              </span>
+
+              {/* Campo Usuario */}
+              <span className="p-float-label">
+              <InputText
+                id="usuario"
+                name="usuario"
+                value={isEditing ? editNuevoUsuario.usuario : nuevoUsuario.usuario}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (isEditing) {
+                    setEditNuevoUsuario({ ...editNuevoUsuario, usuario: value });
+                  } else {
+                    setNuevoUsuario({ ...nuevoUsuario, usuario: value });
+                  }
+                }}
+              />
                 <label htmlFor="usuario">Usuario</label>
               </span>
+
+              {/* Campo Contraseña */}
               <div className="card flex justify-content-center w-full">
-                              <FloatLabel className="w-full">
-                                <Password
-                                  className="w-full"
-                                  inputId="contrasenia"
-                                  value={nuevoUsuario.contrasenia}
-                                  onChange={(e) =>  setNuevoUsuario({ ...nuevoUsuario, contrasenia: e.target.value })}
-                                  feedback={false}
-                                  toggleMask={true}
-                                  inputClassName="w-full"
-                                />
-                                <label htmlFor="contrasenia">Contraseña</label>
-                              </FloatLabel>
-                            </div>
+                <FloatLabel className="w-full">
+                <Password
+                  className="w-full"
+                  inputId="contrasenia"
+                  value={isEditing ? editNuevoUsuario.contrasenia : nuevoUsuario.contrasenia}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (isEditing) {
+                      setEditNuevoUsuario({ ...editNuevoUsuario, contrasenia: value });
+                    } else {
+                      setNuevoUsuario({ ...nuevoUsuario, contrasenia: value });
+                    }
+                  }}
+                  feedback={false}
+                  toggleMask={true}
+                  inputClassName="w-full"
+                />
+                  <label htmlFor="contrasenia">
+                    {isEditing ? "Contraseña nueva" : "Contraseña"}
+                  </label>
+                </FloatLabel>
+              </div>
             </div>
           </ModalFormulario>
+
         </section>
       );
 }
