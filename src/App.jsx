@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { PrimeReactProvider } from "primereact/api";
 import PanelAdministracion from "./Components/PanelAdministracion";
 import ProtectedRoute from "./Components/ProtectedRoute";
+import PanelConsultasMedicas from "./Components/PanelConsultasMedicas";
 function App() {
   return (
     <>
@@ -14,6 +15,12 @@ function App() {
               <Route
                 path="/administracion"
                 element={<PanelAdministracion />}
+              ></Route>
+            </Route>
+            <Route element={<ProtectedRoute />}>
+              <Route
+                path="/hospital"
+                element={<PanelConsultasMedicas />}
               ></Route>
             </Route>
 

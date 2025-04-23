@@ -4,30 +4,21 @@ import {
   IconoEmpleados,
   IconoHospital,
   IconoPerfil,
-  IconoReportes,
-  IconoUsuarios,
 } from "../assets/IconosComponentes";
 
-import InterfazEmpleados from "./Secciones/InterfazEmpleados";
-import InterfazReportes from "./Secciones/InterfazReportes";
-
-import CentrosMedicos from "./Secciones/CentrosMedicos";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import GestionUsuarios from "./Secciones/GestionUsuarios";
 
 const navItems = [
-  { key: "empleados", label: "Empleados", icon: <IconoEmpleados /> },
-  { key: "centroMedico", label: "Centros Médicos", icon: <IconoHospital /> },
-  { key: "reportes", label: "Reportes", icon: <IconoReportes /> },
   {
-    key: "gestionUsuarios",
-    label: "Gestión de usuarios",
-    icon: <IconoUsuarios />,
+    key: "consultasMedicas",
+    label: "Consultas Medicas",
+    icon: <IconoHospital />,
   },
+  { key: "pacientes", label: "Pacientes", icon: <IconoEmpleados /> },
 ];
 
-const PanelAdministracion = () => {
+const PanelConsultasMedicas = () => {
   const navigate = useNavigate();
   const [activeSection, setActiveSection] = useState("empleados");
   const [userData, setUserData] = useState(null);
@@ -38,7 +29,7 @@ const PanelAdministracion = () => {
       try {
         const decoded = jwtDecode(token);
         console.log("Decoded JWT:", decoded);
-        if (decoded.TipoEmpleado !== "Administrador") {
+        if (decoded.TipoEmpleado !== "Medico") {
           navigate("/login");
           return;
         }
@@ -62,14 +53,10 @@ const PanelAdministracion = () => {
   const renderSection = () => {
     //AQUI VA CADA UNO DE LOS COMPONENTES QUE SE VAN A RENDERIZAR EN CADA UNA DE LAS SECCIONES
     switch (activeSection) {
-      case "empleados":
-        return <InterfazEmpleados />;
-      case "centroMedico":
-        return <CentrosMedicos />;
-      case "reportes":
-        return <InterfazReportes />;
-      case "gestionUsuarios":
-        return <GestionUsuarios />;
+      case "consultasMedicas":
+        return <div>Consultas Medicas</div>;
+      case "pacientes":
+        return <div>Pacientes</div>;
       default:
         return <h1>Sección: {activeSection}</h1>;
     }
@@ -152,4 +139,4 @@ const PanelAdministracion = () => {
   );
 };
 
-export default PanelAdministracion;
+export default PanelConsultasMedicas;
