@@ -8,6 +8,7 @@ import {
 
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import ConsultasMedicas from "./Secciones/ConsultasMedicas";
 
 const navItems = [
   {
@@ -55,7 +56,7 @@ const PanelConsultasMedicas = () => {
     //AQUI VA CADA UNO DE LOS COMPONENTES QUE SE VAN A RENDERIZAR EN CADA UNA DE LAS SECCIONES
     switch (activeSection) {
       case "consultasMedicas":
-        return <div>Consultas Medicas</div>;
+        return <ConsultasMedicas />;
       case "pacientes":
         return <div>Pacientes</div>;
       default:
