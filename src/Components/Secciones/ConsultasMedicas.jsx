@@ -18,66 +18,303 @@ import api from "../../api/config";
 import { Toast } from "primereact/toast";
 import { Dialog } from "primereact/dialog";
 import { Button } from "primereact/button";
+import { Calendar } from "primereact/calendar";
+import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 
-function ConsultasMedicas() {
+function ConsultasMedicas({ idMedico, idCentroMedico }) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [globalFilter, setGlobalFilter] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [data, setData] = useState([]);
   const [detalleVisible, setDetalleVisible] = useState(false);
   const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
+  const [nuevaConsulta, setNuevaConsulta] = useState({
+    fecha: new Date(),
+    hora: new Date(),
+    motivo: "",
+    diagnostico: "",
+    tratamiento: "",
+    cedula: "",
+  });
   const toast = useRef(null);
 
   // Cargar consultas médicas desde el microservicio
+  const fetchConsultasMedicas = async () => {
+    try {
+      const response = await api.get("CentroMedico/Consultas");
+
+      const consultas = response.data.consultas.map((consulta, index) => ({
+        key: `${index}`,
+        data: {
+          idConsultaMedica: consulta.idConsultaMedica,
+          fecha: consulta.fecha,
+          cedulaPaciente: consulta.paciente.cedula,
+          direccionPaciente: consulta.paciente.direccion,
+          telefonoPaciente: consulta.paciente.telefono,
+          nombrePaciente: consulta.paciente.nombre,
+          centroMedico: consulta.centroMedico.nombre,
+          hora: consulta.hora,
+          empleado: {
+            nombre: consulta.empleado.nombre,
+            especialidad: {
+              especialidad_: consulta.empleado.especialidad.especialidad_,
+            },
+          },
+          motivo: consulta.motivo,
+          diagnostico: consulta.diagnostico,
+          tratamiento: consulta.tratamiento,
+        },
+      }));
+      // 2. Ordenar las consultas por fecha (más reciente primero)
+      const consultasOrdenadas = consultas.sort((a, b) => {
+        // Convertir las fechas a objetos Date para comparación
+        const fechaA = new Date(`${a.data.fecha}T${a.data.hora}`);
+        const fechaB = new Date(`${b.data.fecha}T${b.data.hora}`);
+
+        // Orden descendente (más reciente primero)
+        return fechaB - fechaA;
+      });
+
+      setData(consultasOrdenadas);
+    } catch (error) {
+      console.error("Error al cargar consultas médicas:", error);
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "No se pudieron cargar las consultas médicas.",
+        life: 3000,
+      });
+    }
+  };
   useEffect(() => {
-    const fetchConsultasMedicas = async () => {
+    fetchConsultasMedicas();
+  }, []);
+  // Guardar nueva consulta médica
+  const handleGuardarConsultaMedica = async () => {
+    if (
+      !nuevaConsulta.fecha ||
+      !nuevaConsulta.hora ||
+      !nuevaConsulta.motivo ||
+      !nuevaConsulta.cedula
+    ) {
+      toast.current.show({
+        severity: "warn",
+        summary: "Campos incompletos",
+        detail: "Por favor completa todos los campos obligatorios.",
+        life: 3000,
+      });
+      return;
+    }
+
+    if (!idMedico || !idCentroMedico) {
+      toast.current.show({
+        severity: "error",
+        summary: "Error",
+        detail: "No se pudo obtener la información del médico o centro médico.",
+        life: 3000,
+      });
+      return;
+    }
+
+    if (isEditing) {
+      // Actualizar consulta médica existente
       try {
-        const response = await api.get("CentroMedico/Consultas");
-        console.log("Consultas médicas:", response.data.consultas);
-        console.log(
-          "Consultas médicas:",
-          response.data.consultas[0].centroMedico.nombre
+        const formattedFecha = nuevaConsulta.fecha.toISOString().split("T")[0];
+        const formattedHora = nuevaConsulta.hora.toTimeString().slice(0, 5);
+
+        await api.put(
+          `CentroMedico/Consultas/${consultaSeleccionada.idConsultaMedica}`,
+          {
+            idConsultaMedica: consultaSeleccionada.idConsultaMedica,
+            idMedico: idMedico,
+            fecha: formattedFecha,
+            hora: formattedHora,
+            motivo: nuevaConsulta.motivo,
+            diagnostico: nuevaConsulta.diagnostico || "",
+            tratamiento: nuevaConsulta.tratamiento || "",
+            cedula: nuevaConsulta.cedula,
+            idCentroMedico: idCentroMedico,
+          }
         );
 
-        const consultas = response.data.consultas.map((consulta, index) => ({
-          key: `${index}`,
-          data: {
-            idConsultaMedica: consulta.idConsultaMedica,
-            fecha: consulta.fecha,
-            cedulaPaciente: consulta.paciente.cedula,
-            direccionPaciente: consulta.paciente.direccion,
-            telefonoPaciente: consulta.paciente.telefono,
-            nombrePaciente: consulta.paciente.nombre,
-            centroMedico: consulta.centroMedico.nombre,
-            hora: consulta.hora,
-            empleado: {
-              nombre: consulta.empleado.nombre,
-              especialidad: {
-                especialidad_: consulta.empleado.especialidad.especialidad_,
-              },
-            },
-            motivo: consulta.motivo,
-            diagnostico: consulta.diagnostico,
-            tratamiento: consulta.tratamiento,
-          },
-        }));
-        setData(consultas);
+        const updatedData = data.map((item) =>
+          item.data.idConsultaMedica === consultaSeleccionada.idConsultaMedica
+            ? {
+                ...item,
+                data: {
+                  ...item.data,
+                  ...nuevaConsulta,
+                  fecha: nuevaConsulta.fecha.toISOString().split("T")[0], // convertir a string
+                  hora: nuevaConsulta.hora.toTimeString().slice(0, 5),
+                },
+              }
+            : item
+        );
+        setData(updatedData);
+
+        toast.current.show({
+          severity: "success",
+          summary: "Éxito",
+          detail: "Consulta médica actualizada exitosamente.",
+          life: 3000,
+        });
       } catch (error) {
-        console.error("Error al cargar consultas médicas:", error);
+        console.error("Error al actualizar consulta médica:", error);
         toast.current.show({
           severity: "error",
           summary: "Error",
-          detail: "No se pudieron cargar las consultas médicas.",
+          detail: "No se pudo actualizar la consulta médica.",
           life: 3000,
         });
       }
-    };
-    fetchConsultasMedicas();
-  }, []);
-  const handleGuardarConsultaMedica = () => {};
-  const handleEdit = (rowData) => {};
-  const handleDelete = (rowData) => {};
-  const handleCancel = () => {};
+      setIsEditing(false);
+      setModalVisible(false);
+      return;
+    } else {
+      try {
+        const formattedFecha = nuevaConsulta.fecha.toISOString().split("T")[0];
+        const formattedHora = nuevaConsulta.hora.toTimeString().slice(0, 5);
+
+        const response = await api.post("CentroMedico/Consultas", {
+          fecha: formattedFecha,
+          hora: formattedHora,
+          motivo: nuevaConsulta.motivo,
+          diagnostico: nuevaConsulta.diagnostico || "",
+          tratamiento: nuevaConsulta.tratamiento || "",
+          idMedico: idMedico,
+          cedula: nuevaConsulta.cedula,
+          idCentroMedico: idCentroMedico,
+        });
+
+        const nueva = {
+          key: `${data.length}`,
+          data: {
+            idConsultaMedica: response.data.idConsultaMedica,
+            fecha: response.data.fecha,
+            cedulaPaciente: response.data.paciente.cedula,
+            direccionPaciente: response.data.paciente.direccion,
+            telefonoPaciente: response.data.paciente.telefono,
+            nombrePaciente: response.data.paciente.nombre,
+            centroMedico: response.data.centroMedico.nombre,
+            empleado: response.data.empleado,
+            hora: response.data.hora,
+            motivo: response.data.motivo,
+            diagnostico: response.data.diagnostico,
+            tratamiento: response.data.tratamiento,
+          },
+        };
+        setData([nueva, ...data]);
+
+        toast.current.show({
+          severity: "success",
+          summary: "Éxito",
+          detail: "Consulta médica registrada exitosamente.",
+          life: 3000,
+        });
+
+        setNuevaConsulta({
+          fecha: new Date(),
+          hora: new Date(),
+          motivo: "",
+          diagnostico: "",
+          tratamiento: "",
+          cedula: "",
+        });
+        setModalVisible(false);
+      } catch (error) {
+        // Obtener el mensaje de error de la respuesta
+        const errorMessage =
+          error.response?.data?.mensaje ||
+          error.message ||
+          "No se pudo registrar la consulta médica";
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: errorMessage,
+          life: 3000,
+        });
+      }
+    }
+  };
+  const handleEdit = (rowData) => {
+    setConsultaSeleccionada(rowData.data);
+    setIsEditing(true);
+    setModalVisible(true);
+    setNuevaConsulta({
+      fecha: new Date(rowData.data.fecha),
+      hora: new Date(`1970-01-01T${rowData.data.hora}`),
+      motivo: rowData.data.motivo,
+      diagnostico: rowData.data.diagnostico,
+      tratamiento: rowData.data.tratamiento,
+      cedula: rowData.data.cedulaPaciente,
+    });
+  };
+  const handleDelete = (rowData) => {
+    confirmDialog({
+      message: `¿Estás seguro de que deseas eliminar esta consulta médica?`,
+      header: "Confirmar Eliminación",
+      icon: "pi pi-exclamation-triangle",
+      acceptLabel: "Sí, eliminar",
+      rejectLabel: "Cancelar",
+      accept: async () => {
+        const formattedFecha = new Date(rowData.data.fecha)
+          .toISOString()
+          .split("T")[0];
+        const formattedHora = new Date(`1970-01-01T${rowData.data.hora}`)
+          .toTimeString()
+          .slice(0, 5);
+
+        try {
+          await api.delete(
+            `/CentroMedico/Consultas/${rowData.data.idConsultaMedica}`,
+            {
+              data: {
+                idConsultaMedica: rowData.data.idConsultaMedica,
+                fecha: formattedFecha,
+                hora: formattedHora,
+                motivo: rowData.data.motivo,
+                diagnostico: rowData.data.diagnostico || "",
+                tratamiento: rowData.data.tratamiento || "",
+                idMedico: idMedico,
+                cedula: rowData.data.cedulaPaciente,
+                idCentroMedico: idCentroMedico,
+              },
+            }
+          );
+          const updateData = data.filter(
+            (item) =>
+              item.data.idConsultaMedica !== rowData.data.idConsultaMedica
+          );
+          setData(updateData);
+          toast.current.show({
+            severity: "success",
+            summary: "Consulta médica eliminada",
+            detail: "La consulta médica ha sido eliminada exitosamente.",
+            life: 3000,
+          });
+        } catch (error) {
+          console.error("Error al eliminar", error);
+          toast.current.show({
+            severity: "error",
+            summary: "Error",
+            detail: "No se pudo eliminar la consulta médica.",
+            life: 3000,
+          });
+        }
+      },
+    });
+  };
+  const handleCancel = () => {
+    setModalVisible(false);
+    setIsEditing(false);
+    setNuevaConsulta({
+      fecha: new Date(),
+      hora: new Date(),
+      motivo: "",
+      diagnostico: "",
+      tratamiento: "",
+      cedula: "",
+    });
+  };
   const handleVerDetalles = (rowData) => {
     setConsultaSeleccionada(rowData.data);
     setDetalleVisible(true);
@@ -90,6 +327,7 @@ function ConsultasMedicas() {
   return (
     <section className="py-14 px-8">
       <Toast ref={toast} />
+      <ConfirmDialog />
       <div className="flex flex-row justify-between">
         <h1 className="text-3xl font-bold">Consultas Médicas</h1>
         <Boton
@@ -99,23 +337,13 @@ function ConsultasMedicas() {
         />
       </div>
 
-      <div className="flex justify-content-end my-8">
-        <IconField iconPosition="left">
-          <InputIcon className="pi pi-search" />
-          <InputText
-            type="search"
-            onInput={(e) => setGlobalFilter(e.target.value)}
-            placeholder="Nombre del Centro Médico"
-          />
-        </IconField>
-      </div>
+      <div className="flex justify-content-end my-8"></div>
       <div className="card">
         <DataTable
           value={data}
           rows={5}
           paginator={true}
           tableStyle={{ minWidth: "50rem" }}
-          globalFilter={globalFilter}
           rowsPerPageOptions={[5, 10, 20]}
           currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
@@ -197,7 +425,9 @@ function ConsultasMedicas() {
       <ModalFormulario
         visible={modalVisible}
         onHide={handleCancel}
-        titulo={isEditing ? "Editar Centro Médico" : "Registrar Centro Médico"}
+        titulo={
+          isEditing ? "Editar Consulta Médica" : "Registrar Consulta Médica"
+        }
         footer={
           <div className="flex justify-end gap-2">
             <Boton
@@ -212,36 +442,104 @@ function ConsultasMedicas() {
           </div>
         }
       >
-        <div className="grid gap-8 mt-8">
-          <span className="p-float-label">
+        <div className="grid gap-4 mt-4">
+          <div className="p-field">
+            <label htmlFor="fecha" className="block font-semibold">
+              Fecha *
+            </label>
+            <Calendar
+              id="fecha"
+              value={nuevaConsulta.fecha}
+              minDate={new Date(new Date().setDate(new Date().getDate() - 1))}
+              maxDate={new Date()}
+              onChange={(e) =>
+                setNuevaConsulta({ ...nuevaConsulta, fecha: e.value })
+              }
+              dateFormat="yy-mm-dd"
+              showIcon
+              required
+              className="w-full"
+            />
+          </div>
+          <div className="p-field">
+            <label htmlFor="hora" className="block font-semibold">
+              Hora *
+            </label>
+            <Calendar
+              id="hora"
+              value={nuevaConsulta.hora}
+              onChange={(e) =>
+                setNuevaConsulta({ ...nuevaConsulta, hora: e.value })
+              }
+              timeOnly
+              hourFormat="24"
+              maxDate={new Date()}
+              showIcon
+              required
+              className="w-full"
+              icon="pi pi-clock"
+            />
+          </div>
+          <div className="p-field">
+            <label htmlFor="motivo" className="block font-semibold">
+              Motivo *
+            </label>
             <InputText
-              id="nombreCentro"
-              name="nombreCentro"
-              value={""}
-              onChange={""}
+              id="motivo"
+              value={nuevaConsulta.motivo}
+              onChange={(e) =>
+                setNuevaConsulta({ ...nuevaConsulta, motivo: e.target.value })
+              }
+              required
+              className="w-full"
             />
-            <label htmlFor="nombreCentro">Nombre</label>
-          </span>
-          <span className="p-float-label">
-            <Dropdown
-              id="ciudadCentro"
-              name="ciudadCentro"
-              value={""}
-              options={""}
-              onChange={""}
-              placeholder="Selecciona una ciudad"
-            />
-            <label htmlFor="ciudadCentro">Ciudad</label>
-          </span>
-          <span className="p-float-label">
+          </div>
+          <div className="p-field">
+            <label htmlFor="diagnostico" className="block font-semibold">
+              Diagnóstico
+            </label>
             <InputText
-              id="direccionCentro"
-              name="direccionCentro"
-              value={""}
-              onChange={""}
+              id="diagnostico"
+              value={nuevaConsulta.diagnostico}
+              onChange={(e) =>
+                setNuevaConsulta({
+                  ...nuevaConsulta,
+                  diagnostico: e.target.value,
+                })
+              }
+              className="w-full"
             />
-            <label htmlFor="direccionCentro">Dirección</label>
-          </span>
+          </div>
+          <div className="p-field">
+            <label htmlFor="tratamiento" className="block font-semibold">
+              Tratamiento
+            </label>
+            <InputText
+              id="tratamiento"
+              value={nuevaConsulta.tratamiento}
+              onChange={(e) =>
+                setNuevaConsulta({
+                  ...nuevaConsulta,
+                  tratamiento: e.target.value,
+                })
+              }
+              className="w-full"
+            />
+          </div>
+          <div className="p-field">
+            <label htmlFor="cedula" className="block font-semibold">
+              Cédula Paciente *
+            </label>
+            <InputText
+              id="cedula"
+              value={nuevaConsulta.cedula}
+              onChange={(e) =>
+                setNuevaConsulta({ ...nuevaConsulta, cedula: e.target.value })
+              }
+              required
+              className="w-full"
+            />
+          </div>
         </div>
       </ModalFormulario>
 
