@@ -24,6 +24,7 @@ import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 function ConsultasMedicas({ idMedico, idCentroMedico }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [globalFilter, setGlobalFilter] = useState(null);
   const [data, setData] = useState([]);
   const [detalleVisible, setDetalleVisible] = useState(false);
   const [consultaSeleccionada, setConsultaSeleccionada] = useState(null);
@@ -339,11 +340,20 @@ function ConsultasMedicas({ idMedico, idCentroMedico }) {
 
       <div className="flex justify-content-end my-8"></div>
       <div className="card">
+        <IconField iconPosition="left">
+          <InputIcon className="pi pi-search" />
+          <InputText
+            type="search"
+            onInput={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Cedula o Nombre paciente"
+          />
+        </IconField>
         <DataTable
           value={data}
           rows={5}
           paginator={true}
           tableStyle={{ minWidth: "50rem" }}
+          globalFilter={globalFilter}
           rowsPerPageOptions={[5, 10, 20]}
           currentPageReportTemplate="Mostrando {first} a {last} de {totalRecords} registros"
           paginatorTemplate="RowsPerPageDropdown FirstPageLink PrevPageLink PageLinks NextPageLink LastPageLink CurrentPageReport"
