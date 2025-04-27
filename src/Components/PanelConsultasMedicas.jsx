@@ -8,6 +8,7 @@ import {
 
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import Pacientes from "./Secciones/Pacientes";
 import ConsultasMedicas from "./Secciones/ConsultasMedicas";
 
 const navItems = [
@@ -65,7 +66,9 @@ const PanelConsultasMedicas = () => {
           />
         );
       case "pacientes":
-        return <div>Pacientes</div>;
+        
+        return <Pacientes 
+        idCentroMedico={userData?.idCentroMedico}/>;
       default:
         return <h1>Sección: {activeSection}</h1>;
     }
