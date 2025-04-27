@@ -31,6 +31,7 @@ const [modalVisible, setModalVisible] = useState(false);
 const [isEditing, setIsEditing] = useState(false);
 const[pacientes,setPacientes]=useState([]);
 const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
+const [centroMedicoIdActual, setCentroMedicoIdActual] = useState(null);
 
 const [nuevoPaciente, setNuevoPaciente] = useState({
     nombre: "",
@@ -39,16 +40,9 @@ const [nuevoPaciente, setNuevoPaciente] = useState({
     telefono:"",
     direccion:"",
     centroMedicoId:"",
-});
-const [editNuevoPaciente, setEditNuevoPaciente] = useState({
-    nombre: "",
-    cedula: "",
-    fechaNacimiento: "",
-    telefono:"",
-    direccion:"",
-    centroMedicoId:"",
     idPaciente:"",
 });
+
 
 //setear el calendario
 addLocale('es', {
@@ -62,89 +56,49 @@ addLocale('es', {
     clear: 'Limpiar',
   });
 
-// Cargar usuarios al montar el componente
+// Cargar pacientes al montar el componente
 useEffect(() => {
     const fetchPacientes = async () => {
-      try {
-        const response = await api.get("/CentroMedico/Pacientes");
-        const pacientes = response.data.pacientes
-          .sort((a, b) => b.idPaciente - a.idPaciente) // Ordenar por id descendente
-          .map((paciente, index) => ({
-            key: `${index}`,
-            data: {
-                pacienteId:paciente.idPaciente||'',
-                nombre:paciente.nombre||'',
-                cedula: paciente.cedula || '',
-                edad: paciente.fechaNacimiento||'',              
-                telefono: paciente.telefono || '',
-                direccion: paciente.direccion || '',
-                centroMedicoId: paciente.centroMedico?.id || '',
-              },
-            children: [],
-          }));
-        setData(pacientes);
-      } catch (error) {
-        console.error("Error al cargar los paciente", error);
-
-        toast.current.show({
-          severity: "error",
-          summary: "Error",
-          detail: "No se pudieron cargar los pacientes.",
-          life: 3000,
-        });
-      }
-    };
-    fetchPacientes();
-}, []);
-  
-  const handleDelete = (rowData) => {
-    confirmDialog({
-      message: `¿Estás seguro de que deseas eliminar este usuario "${rowData.data.nombreUsuario}"?`,
-      header: "Confirmar Eliminación",
-      icon: "pi pi-exclamation-triangle",
-      acceptLabel: "Sí, eliminar",
-      rejectLabel: "Cancelar",
-      accept: async () => {
         try {
-          await api.delete(`/Administracion/Usuarios/${rowData.data.usuarioId}`);
-          const updateData = data.filter(
-            (item) => item.data.usuarioId !== rowData.data.usuarioId
-          );
-          setData(updateData);
-          toast.current.show({
-            severity: "success",
-            summary: "Usuario eliminado",
-            detail: "El usuario ha sido eliminado exitosamente.",
-            life: 3000,
-          });
+            const response = await api.get("/CentroMedico/Pacientes");
+            const pacientesData = response.data.pacientes;
+    
+            // Suponiendo que todos pertenecen al mismo centro médico
+            if (pacientesData.length > 0) {
+            setCentroMedicoIdActual(pacientesData[0].centroMedico?.id || null);
+            }
+    
+            const pacientes = pacientesData
+            .sort((a, b) => b.idPaciente - a.idPaciente)
+            .map((paciente, index) => {
+                const edad = mostrarEdad(paciente.fechaNacimiento); // Aquí usas mostrarEdad
+    
+                return {
+                key: `${index}`,
+                data: {
+                    pacienteId: paciente.idPaciente || '',
+                    nombre: paciente.nombre || '',
+                    cedula: paciente.cedula || '',
+                    edad: edad || '',  // Aquí asignas la edad calculada en formato de texto
+                    telefono: paciente.telefono || '',
+                    direccion: paciente.direccion || '',
+                    centroMedicoId: paciente.centroMedico?.id || '',
+                    fechaNacimiento: paciente.fechaNacimiento||'', 
+                },
+                children: [],
+                };
+            });
+    
+            setData(pacientes);
         } catch (error) {
-          console.error("Error al eliminar", error);
-          toast.current.show({
-            severity: "error",
-            summary: "Error",
-            detail: "No se pudo eliminar al usuario.",
-            life: 3000,
-          });
+            console.error("Error al cargar los pacientes", error);
+            // Aquí podrías agregar un toast de error si lo necesitas
         }
-      },
-    });
-  };
-
-// Manejar la apertura del modal para edición
-const handleEdit = (rowData) => {
-    setIsEditing(true);
-    setPacienteSeleccionado(rowData);
-    setEditNuevoPaciente({
-        idPaciente: rowData.data.pacienteId,
-        nombre: rowData.data.nombre,
-        cedula: rowData.data.cedula,
-        fechaNacimiento: rowData.data.fechaNacimiento,
-        telefono: rowData.data.telefono,
-        direccion: rowData.data.direccion,
-        centroMedico: rowData.data.centroMedicoId,
-    });
-    setModalVisible(true);    
-};
+        };
+    
+        fetchPacientes();
+    }, []);
+    
 
   //guardar paciente 
 const handleGuardarPaciente= async () => {
@@ -164,33 +118,40 @@ try {
         `/CentroMedico/Pacientes/${pacienteSeleccionado.data.pacienteId}`,
         {
         idPaciente: pacienteSeleccionado.data.pacienteId,
-        nombre: editNuevoPaciente.nombre,
-        cedula: editNuevoPaciente.cedula,
-        fechaNacimiento: editNuevoPaciente.fechaNacimiento,
-        telefono: editNuevoPaciente.telefono,
-        direccion: editNuevoPaciente.direccion,
-        idCentroMedico: editNuevoPaciente.centroMedicoId,
+        nombre: nuevoPaciente.nombre,
+        cedula: nuevoPaciente.cedula,
+        fechaNacimiento: formatearFecha(nuevoPaciente.fechaNacimiento), 
+        telefono: nuevoPaciente.telefono,
+        direccion: nuevoPaciente.direccion,
+        idCentroMedico:centroMedicoIdActual,
         }
     );
     // Actualizar la lista de pacientes
     const updatedData = data.map((item) =>
-        item.data.id === pacienteSeleccionado.data.pacienteId
+        item.data.pacienteId === pacienteSeleccionado.data.pacienteId
         ? {
             ...item,
             data: {
-                id: response.data.id,
-                nombre: response.data.nombre,
-                cedula: response.data.cedula,
-                fechaNacimiento: response.data.fechaNacimiento,
-                telefono: response.data.telefono,
-                direccion: response.data.direccion,
-                centroMedicoId: response.data.centroMedicoId,
+                id: pacienteSeleccionado.data.pacienteId,
+                nombre: nuevoPaciente.nombre,
+                cedula: nuevoPaciente.cedula,
+                edad: mostrarEdad(nuevoPaciente.fechaNacimiento),
+                telefono: nuevoPaciente.telefono,
+                direccion: nuevoPaciente.direccion,
             },
         }
         : item
     );
     setData(updatedData);
-
+    setNuevoPaciente({
+        nombre: "",
+        cedula: "",
+        fechaNacimiento: "",
+        telefono:"",
+        direccion:"",
+        centroMedicoId:"",
+    });
+    setPacienteSeleccionado(null);
     toast.current.show({
         severity: "success",
         summary: "Paciente actualizado",
@@ -199,12 +160,12 @@ try {
     });
     } else {
     const response = await api.post("/CentroMedico/Pacientes", {
-        nombre: nuevoPaciente.nombre,
         cedula: nuevoPaciente.cedula,
-        fechaNacimiento: nuevoPaciente.fechaNacimiento, 
-        telefono: nuevoPaciente.telefono,
+        nombre: nuevoPaciente.nombre,
+        fechaNacimiento: formatearFecha(nuevoPaciente.fechaNacimiento), 
         direccion: nuevoPaciente.direccion,
-        idCentroMedico: nuevoPaciente.centroMedicoId,
+        telefono: nuevoPaciente.telefono,
+        idCentroMedico: centroMedicoIdActual,
     });
     const nuevo = {
         key: `${data.length}`,
@@ -212,7 +173,7 @@ try {
         id: response.data.id,
         nombre: response.data.nombre,
         cedula: response.data.cedula,
-        fechaNacimiento: response.data.fechaNacimiento,
+        edad: mostrarEdad(response.data.fechaNacimiento),
         telefono: response.data.telefono,
         direccion: response.data.direccion,
         centroMedicoId: response.data.centroMedicoId,
@@ -252,6 +213,87 @@ try {
 }
 };
 
+// Manejar la apertura del modal para edición
+const handleEdit = (rowData) => {
+    setIsEditing(true);
+    // Convertir la fecha de DD/MM/YYYY a un objeto Date
+    let fechaNacimiento = null;
+    if (rowData.data.fechaNacimiento) {
+        const [day, month, year] = rowData.data.fechaNacimiento.split('/');
+        if (day && month && year) {
+            fechaNacimiento = new Date(`${year}-${month}-${day}`);
+            // Verificar si la fecha es válida
+            if (isNaN(fechaNacimiento.getTime())) {
+                fechaNacimiento = null; // Si la fecha no es válida, asignar null
+            }
+        }
+    }
+    setPacienteSeleccionado(rowData);
+    setNuevoPaciente({
+        idPaciente: rowData.data.pacienteId,
+        nombre: rowData.data.nombre,
+        cedula: rowData.data.cedula,
+        fechaNacimiento: fechaNacimiento,
+        telefono: rowData.data.telefono,
+        direccion: rowData.data.direccion,
+        centroMedico: rowData.data.centroMedicoId,
+    });
+
+    setModalVisible(true);    
+};
+
+
+ //Eliminar paciente 
+const handleDelete = (rowData) => {
+confirmDialog({
+    message: `¿Estás seguro de que deseas eliminar al/la paciente  "${rowData.data.pacienteId}"?`,
+    header: "Confirmar Eliminación",
+    icon: "pi pi-exclamation-triangle",
+    acceptLabel:"Sí, eliminar",
+    rejectLabel :"Cancelar",
+    accept: async () => {
+    try {
+        await api.delete(`/CentroMedico/Pacientes/${rowData.data.pacienteId}`, {
+            data: {
+                idPaciente: rowData.data.pacienteId,
+                nombre: rowData.data.nombre,
+                cedula: rowData.data.cedula,
+                fechaNacimiento: rowData.data.fechaNacimiento, // Ya está en formato DD/MM/YYYY
+                telefono: rowData.data.telefono,
+                direccion: rowData.data.direccion,
+                idCentroMedico: centroMedicoIdActual,
+            },
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const updateData = data.filter(
+        (item) => item.data.pacienteId !== rowData.data.pacienteId
+        );
+        setData(updateData);
+        toast.current.show({
+        severity: "success",
+        summary: "Paciente eliminado",
+        detail: "El paciente ha sido eliminado exitosamente.",
+        life: 3000,
+        });
+    } catch (error) {
+        console.error("Error al eliminar", error);
+        toast.current.show({
+          severity: "error",
+          summary: "Error",
+          detail: "No se pudo eliminar al paciente.",
+          life: 3000,
+        });
+    }
+    },
+});
+};
+
+
+
+
 const handleCancel = () => {
     setNuevoPaciente({
         nombre: "",
@@ -261,18 +303,77 @@ const handleCancel = () => {
         direccion:"",
         centroMedico:"",
     });
-    setEditNuevoPaciente({
-        nombre: "",
-        cedula: "",
-        fechaNacimiento: "",
-        telefono:"",
-        direccion:"",
-        centroMedico:"",
-        idPaciente:"",
-    });
     setIsEditing(false);
     setModalVisible(false);
 };
+//formatear fecha de naciemiento 
+const calcularEdad = (fechaNacimiento) => {
+    if (!fechaNacimiento) return null;
+
+    let nacimiento;
+    // Si la fecha está en formato DD/MM/YYYY (como viene de la API)
+    if (typeof fechaNacimiento === 'string' && fechaNacimiento.includes('/')) {
+        const [day, month, year] = fechaNacimiento.split('/');
+        if (!day || !month || !year) return null;
+        nacimiento = new Date(`${year}-${month}-${day}`);
+    } else {
+        nacimiento = new Date(fechaNacimiento);
+    }
+
+    // Verificar si la fecha es válida
+    if (isNaN(nacimiento.getTime())) {
+        return null;
+    }
+
+    const hoy = new Date();
+
+    // Calcular la diferencia en años
+    let edadEnAnos = hoy.getFullYear() - nacimiento.getFullYear();
+    const mes = hoy.getMonth() - nacimiento.getMonth();
+    const dia = hoy.getDate() - nacimiento.getDate();
+
+    // Ajustar si el paciente aún no ha cumplido los años este año
+    if (mes < 0 || (mes === 0 && dia < 0)) {
+        edadEnAnos--;
+    }
+
+    // Si la edad es menor a 1 año, calculamos en meses o días
+    if (edadEnAnos < 1) {
+        const diffInMs = hoy.getTime() - nacimiento.getTime();
+        const totalDias = Math.floor(diffInMs / (1000 * 3600 * 24));
+
+        if (totalDias < 30) {
+            return `${totalDias} día${totalDias !== 1 ? 's' : ''}`;
+        }
+
+        let meses = hoy.getMonth() - nacimiento.getMonth() + (hoy.getFullYear() - nacimiento.getFullYear()) * 12;
+        if (hoy.getDate() < nacimiento.getDate()) {
+            meses--;
+        }
+        return `${meses} mes${meses !== 1 ? 'es' : ''}`;
+    }
+
+    // Si ya tiene 1 año o más
+    return `${edadEnAnos} año${edadEnAnos > 1 ? 's' : ''}`;
+};
+
+const mostrarEdad = (fechaNacimiento) => {
+    const edad = calcularEdad(fechaNacimiento);
+    if (!edad) return "Edad no disponible";
+    return edad;
+};
+
+//formatear fecha de nacimiento
+const formatearFecha = (fecha) => {
+    if (!fecha) return null;
+    const date = new Date(fecha);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // meses empiezan desde 0
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}/${month}/${day}`;
+  };
+  
+
 //*Manejar pacientes modal 
 useEffect(() => {
     const fetchPaciente = async () => {
@@ -428,6 +529,7 @@ useEffect(() => {
         />
         <label htmlFor="nombrePaciente">Nombre</label>
         </span>
+
         <span className="p-float-label">
         <Calendar
             id="fechaNacimiento"
