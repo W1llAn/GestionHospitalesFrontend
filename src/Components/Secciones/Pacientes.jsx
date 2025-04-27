@@ -23,7 +23,7 @@ import { Toast } from "primereact/toast";
 import { ConfirmDialog, confirmDialog } from "primereact/confirmdialog";
 import { Dropdown } from "primereact/dropdown";
 
-function Pacientes () {
+function Pacientes (idCentroMedico) {
 const toast=useRef();
 const [data, setData] = useState([]);
 const [globalFilter, setGlobalFilter] = useState("");
@@ -56,48 +56,52 @@ addLocale('es', {
     clear: 'Limpiar',
   });
 
+
+  const fetchPacientes = async () => {
+    try {
+        const response = await api.get("/CentroMedico/Pacientes");
+        const pacientesData = response.data.pacientes;
+
+        // Suponiendo que todos pertenecen al mismo centro médico
+        if (pacientesData.length > 0) {
+        setCentroMedicoIdActual(pacientesData[0].centroMedico?.id || null);
+        }
+
+        const pacientes = pacientesData
+        .sort((a, b) => b.idPaciente - a.idPaciente)
+        .map((paciente, index) => {
+            const edad = mostrarEdad(paciente.fechaNacimiento); // Aquí usas mostrarEdad
+
+            return {
+            key: `${index}`,
+            data: {
+                pacienteId: paciente.idPaciente || '',
+                nombre: paciente.nombre || '',
+                cedula: paciente.cedula || '',
+                edad: edad || '',  // Aquí asignas la edad calculada en formato de texto
+                telefono: paciente.telefono || '',
+                direccion: paciente.direccion || '',
+                centroMedicoId: paciente.centroMedico?.id || '',
+                fechaNacimiento: paciente.fechaNacimiento||'', 
+            },
+            children: [],
+            };
+        });
+
+        setData(pacientes);
+    } catch (error) {
+        console.error("Error al cargar los pacientes", error);
+        // Aquí podrías agregar un toast de error si lo necesitas
+    }
+    };
+
 // Cargar pacientes al montar el componente
 useEffect(() => {
-    const fetchPacientes = async () => {
-        try {
-            const response = await api.get("/CentroMedico/Pacientes");
-            const pacientesData = response.data.pacientes;
-    
-            // Suponiendo que todos pertenecen al mismo centro médico
-            if (pacientesData.length > 0) {
-            setCentroMedicoIdActual(pacientesData[0].centroMedico?.id || null);
-            }
-    
-            const pacientes = pacientesData
-            .sort((a, b) => b.idPaciente - a.idPaciente)
-            .map((paciente, index) => {
-                const edad = mostrarEdad(paciente.fechaNacimiento); // Aquí usas mostrarEdad
-    
-                return {
-                key: `${index}`,
-                data: {
-                    pacienteId: paciente.idPaciente || '',
-                    nombre: paciente.nombre || '',
-                    cedula: paciente.cedula || '',
-                    edad: edad || '',  // Aquí asignas la edad calculada en formato de texto
-                    telefono: paciente.telefono || '',
-                    direccion: paciente.direccion || '',
-                    centroMedicoId: paciente.centroMedico?.id || '',
-                    fechaNacimiento: paciente.fechaNacimiento||'', 
-                },
-                children: [],
-                };
-            });
-    
-            setData(pacientes);
-        } catch (error) {
-            console.error("Error al cargar los pacientes", error);
-            // Aquí podrías agregar un toast de error si lo necesitas
-        }
-        };
     
         fetchPacientes();
     }, []);
+
+
     
 
   //guardar paciente 
@@ -123,7 +127,7 @@ try {
         fechaNacimiento: formatearFecha(nuevoPaciente.fechaNacimiento), 
         telefono: nuevoPaciente.telefono,
         direccion: nuevoPaciente.direccion,
-        idCentroMedico:centroMedicoIdActual,
+        idCentroMedico:idCentroMedico.idCentroMedico,
         }
     );
     // Actualizar la lista de pacientes
@@ -165,21 +169,32 @@ try {
         fechaNacimiento: formatearFecha(nuevoPaciente.fechaNacimiento), 
         direccion: nuevoPaciente.direccion,
         telefono: nuevoPaciente.telefono,
-        idCentroMedico: centroMedicoIdActual,
+        idCentroMedico: idCentroMedico.idCentroMedico,
     });
+    fetchPacientes();
     const nuevo = {
         key: `${data.length}`,
         data: {
-        id: response.data.id,
+        pacienteId: response.data.pacienteId,
         nombre: response.data.nombre,
         cedula: response.data.cedula,
-        edad: mostrarEdad(response.data.fechaNacimiento),
+        fechaNacimiento: mostrarEdad(response.data.fechaNacimiento),
         telefono: response.data.telefono,
         direccion: response.data.direccion,
         centroMedicoId: response.data.centroMedicoId,
         },
     };
     setData([nuevo, ...data]);
+
+    setNuevoPaciente({
+        nombre: "",
+        cedula: "",
+        fechaNacimiento: "",
+        telefono:"",
+        direccion:"",
+        centroMedicoId:"",
+    });
+    setPacienteSeleccionado(null);
 
     toast.current.show({
         severity: "success",
@@ -246,7 +261,7 @@ const handleEdit = (rowData) => {
  //Eliminar paciente 
 const handleDelete = (rowData) => {
 confirmDialog({
-    message: `¿Estás seguro de que deseas eliminar al/la paciente  "${rowData.data.pacienteId}"?`,
+    message: `¿Estás seguro de que deseas eliminar al/la paciente  "${rowData.data.nombre}"?`,
     header: "Confirmar Eliminación",
     icon: "pi pi-exclamation-triangle",
     acceptLabel:"Sí, eliminar",
@@ -261,7 +276,7 @@ confirmDialog({
                 fechaNacimiento: rowData.data.fechaNacimiento, // Ya está en formato DD/MM/YYYY
                 telefono: rowData.data.telefono,
                 direccion: rowData.data.direccion,
-                idCentroMedico: centroMedicoIdActual,
+                idCentroMedico: idCentroMedico.idCentroMedico,
             },
             headers: {
                 'Content-Type': 'application/json',

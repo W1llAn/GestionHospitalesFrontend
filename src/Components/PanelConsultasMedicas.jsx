@@ -66,7 +66,9 @@ const PanelConsultasMedicas = () => {
           />
         );
       case "pacientes":
-        return <Pacientes/>;
+        
+        return <Pacientes 
+        idCentroMedico={userData?.idCentroMedico}/>;
       default:
         return <h1>Sección: {activeSection}</h1>;
     }
