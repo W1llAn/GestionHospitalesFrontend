@@ -8,6 +8,7 @@ import {
 
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import ConsultasMedicas from "./Secciones/ConsultasMedicas";
 
 const navItems = [
   {
@@ -37,6 +38,8 @@ const PanelConsultasMedicas = () => {
           username: decoded.unique_name || "Usuario desconocido",
           email: decoded.email || "Sin email registrado",
           especialidad: decoded.Especialidad || "Sin especialidad",
+          idMedico: decoded.IdEmpleado || "", // Ajusta el claim según tu JWT
+          idCentroMedico: decoded.idCentroMedico || "", // Ajusta según tu JWT
         });
       } catch (error) {
         console.error("Error decod Debe ser: codificando el token:", error);
@@ -55,7 +58,12 @@ const PanelConsultasMedicas = () => {
     //AQUI VA CADA UNO DE LOS COMPONENTES QUE SE VAN A RENDERIZAR EN CADA UNA DE LAS SECCIONES
     switch (activeSection) {
       case "consultasMedicas":
-        return <div>Consultas Medicas</div>;
+        return (
+          <ConsultasMedicas
+            idMedico={userData?.idMedico}
+            idCentroMedico={userData?.idCentroMedico}
+          />
+        );
       case "pacientes":
         return <div>Pacientes</div>;
       default:
