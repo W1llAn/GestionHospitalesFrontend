@@ -33,7 +33,7 @@ api.interceptors.response.use(
 
 // SE CREA EL OBJETO API PARA CONSUMIRLO CON AXIOS
 const api = axios.create({
-  baseURL: "http://52.226.126.56:7121/", // API Gateway
+  baseURL: "https://52.226.126.56:7121/", // API Gateway
   timeout: 10000, // TIEMPO DE ESPERA MÁXIMO
 });
 
