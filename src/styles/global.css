@@ -1,0 +1,19 @@
+/*TODAS LAS CONFIGURACIONES DE TAILWIND PARA TODO EL PROYECTO SE 
+HACEN EN ESTE ARCHIVO*/
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #3145b9;
+  --color-prymary-light: #0067d2;
+  --color-hover-gray: #e7eaee;
+  --color-bg-primary: #f8fafd;
+  --color-text-blue: #3145b9;
+  --color-text-primary: #1e1e1e;
+  --color-text-secondary: #667085;
+}
+
+:root {
+  background-color: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-family: Poppins, sans-serif;
+}
