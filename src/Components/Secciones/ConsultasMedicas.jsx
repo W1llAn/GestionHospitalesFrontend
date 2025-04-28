@@ -38,40 +38,64 @@ function ConsultasMedicas({ idMedico, idCentroMedico }) {
   });
   const toast = useRef(null);
 
-  // Cargar consultas médicas desde el microservicio
   const fetchConsultasMedicas = async () => {
     try {
       const response = await api.get("CentroMedico/Consultas");
 
-      const consultas = response.data.consultas.map((consulta, index) => ({
-        key: `${index}`,
-        data: {
-          idConsultaMedica: consulta.idConsultaMedica,
-          fecha: consulta.fecha,
-          cedulaPaciente: consulta.paciente.cedula,
-          direccionPaciente: consulta.paciente.direccion,
-          telefonoPaciente: consulta.paciente.telefono,
-          nombrePaciente: consulta.paciente.nombre,
-          centroMedico: consulta.centroMedico.nombre,
-          hora: consulta.hora,
-          empleado: {
-            nombre: consulta.empleado.nombre,
-            especialidad: {
-              especialidad_: consulta.empleado.especialidad.especialidad_,
+      // Depuración: Imprimir idMedico, su tipo, y estructura de las consultas
+      console.log("idMedico:", idMedico, "Tipo:", typeof idMedico);
+      console.log("Consultas recibidas:", response.data.consultas);
+      response.data.consultas.forEach((consulta) => {
+        console.log(`Consulta ID ${consulta.idConsultaMedica}:`, {
+          empleado: consulta.empleado,
+          idMedicoField: consulta.idMedico,
+        });
+      });
+
+      const consultas = response.data.consultas
+        .filter((consulta) => {
+          const medicoId =
+            consulta.empleado?.id ||
+            consulta.empleado?.empleadoId ||
+            consulta.idMedico;
+          const matches = String(medicoId) === String(idMedico);
+          console.log(
+            `Consulta ID ${
+              consulta.idConsultaMedica
+            }: medicoId=${medicoId} (tipo: ${typeof medicoId}), idMedico=${idMedico} (tipo: ${typeof idMedico}), matches=${matches}`
+          );
+          return matches;
+        })
+        .map((consulta, index) => ({
+          key: `${index}`,
+          data: {
+            idConsultaMedica: consulta.idConsultaMedica,
+            fecha: consulta.fecha,
+            cedulaPaciente: consulta.paciente.cedula,
+            direccionPaciente: consulta.paciente.direccion,
+            telefonoPaciente: consulta.paciente.telefono,
+            nombrePaciente: consulta.paciente.nombre,
+            centroMedico: consulta.centroMedico.nombre,
+            hora: consulta.hora,
+            empleado: {
+              nombre: consulta.empleado.nombre,
+              especialidad: {
+                especialidad_: consulta.empleado.especialidad.especialidad_,
+              },
             },
+            motivo: consulta.motivo,
+            diagnostico: consulta.diagnostico,
+            tratamiento: consulta.tratamiento,
           },
-          motivo: consulta.motivo,
-          diagnostico: consulta.diagnostico,
-          tratamiento: consulta.tratamiento,
-        },
-      }));
-      // 2. Ordenar las consultas por fecha (más reciente primero)
+        }));
+
+      // Depuración: Imprimir consultas filtradas
+      console.log("Consultas filtradas:", consultas);
+
+      // Ordenar las consultas por fecha (más reciente primero)
       const consultasOrdenadas = consultas.sort((a, b) => {
-        // Convertir las fechas a objetos Date para comparación
         const fechaA = new Date(`${a.data.fecha}T${a.data.hora}`);
         const fechaB = new Date(`${b.data.fecha}T${b.data.hora}`);
-
-        // Orden descendente (más reciente primero)
         return fechaB - fechaA;
       });
 
@@ -86,9 +110,12 @@ function ConsultasMedicas({ idMedico, idCentroMedico }) {
       });
     }
   };
+
   useEffect(() => {
-    fetchConsultasMedicas();
-  }, []);
+    if (idMedico) {
+      fetchConsultasMedicas();
+    }
+  }, [idMedico]);
   // Guardar nueva consulta médica
   const handleGuardarConsultaMedica = async () => {
     if (
